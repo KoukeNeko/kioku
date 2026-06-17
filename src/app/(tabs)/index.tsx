@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
 import Svg, { Circle } from 'react-native-svg';
@@ -46,6 +46,7 @@ const CircularProgress = ({ progress, size, strokeWidth, color, trackColor, chil
 
 export default function Home() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [metrics, setMetrics] = useState({ newCards: 0, learningCards: 0, reviewCards: 0 });
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -78,8 +79,8 @@ export default function Home() {
   const progress = totalDue === 0 ? 1 : 0.3; // Placeholder progress logic
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 16) }]} showsVerticalScrollIndicator={false}>
         
         {/* Header Row */}
         <View style={styles.headerRow}>
@@ -199,7 +200,7 @@ export default function Home() {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
