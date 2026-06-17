@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
@@ -47,7 +47,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <AppBar 
         leftContent={
           <Text style={styles.dateText}>6月17日　火曜日</Text>
@@ -60,7 +60,7 @@ export default function Home() {
         }
       />
       
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 16) + 76 }]}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         
         <Text style={styles.greetingText}>おはよう</Text>
 
@@ -124,7 +124,7 @@ export default function Home() {
         <View style={styles.deckList}>
           
           {/* Deck 1 */}
-          <TouchableOpacity style={styles.deckCard} onPress={() => router.push("/review")}>
+          <TouchableOpacity style={styles.deckCard} onPress={() => router.push("/deck")}>
             <View style={styles.deckContentRow}>
               <View style={styles.deckLeft}>
                 <View style={styles.deckTitleRow}>
@@ -192,7 +192,7 @@ export default function Home() {
         </View>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -202,8 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.background,
   },
   scrollContent: {
-    padding: Spacing.three, // reduced from Spacing.four
-    paddingBottom: 100, // Clear the absolute TabBar
+    padding: Spacing.three,
   },
   dateText: {
     color: Colors.dark.textSecondary,

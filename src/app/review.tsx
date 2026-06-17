@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
 import { X, Volume2 } from "lucide-react-native";
 import Svg, { Line, Circle } from "react-native-svg";
 import { Colors, Spacing, Fonts, BORDER_RADIUS } from "../constants/theme";
@@ -118,7 +118,7 @@ export default function Review() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <AppBar 
         leftContent={
           <TouchableOpacity 
@@ -144,7 +144,7 @@ export default function Review() {
         }
       />
 
-      <View style={[styles.mainArea, { paddingTop: Math.max(insets.top, 16) + 76 }]}>
+      <View style={styles.mainArea}>
         <FlashCard 
           frontContent={renderFront()} 
           backContent={renderBack()} 
@@ -153,7 +153,7 @@ export default function Review() {
         />
       </View>
 
-      <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, Spacing.two) }]}>
+      <View style={styles.bottomArea}>
         {isFlipped ? (
           <RatingButtons onRating={handleRating} />
         ) : (
@@ -165,7 +165,7 @@ export default function Review() {
           </View>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
