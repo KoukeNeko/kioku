@@ -1,29 +1,30 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
 import { AppBar } from "../../components/ui/AppBar";
-import { Settings, ChevronRight } from "lucide-react-native";
+import { SettingsCard, SettingsRow, SettingsDivider } from "../../components/ui/SettingsCard";
+import { Settings, ChevronRight, Check, Trophy, BarChart2, HelpCircle, MessageSquare } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Profile() {
-  const [furiganaEnabled, setFuriganaEnabled] = useState(true);
-  const [pitchAccent, setPitchAccent] = useState<'上線' | '数字'>('上線');
-  const [displayFont, setDisplayFont] = useState<'明朝' | 'ゴシック'>('明朝');
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <AppBar 
         leftContent={<Text style={styles.headerTitle}>マイページ</Text>}
         rightContent={
-          <TouchableOpacity style={styles.iconButton}>
-            <Settings size={24} color={Colors.dark.textSecondary} />
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/settings')}>
+            <Settings size={26} color={Colors.dark.textSecondary} />
           </TouchableOpacity>
         }
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <TouchableOpacity style={styles.profileCard}>
           <View style={styles.profileTop}>
             <View style={styles.profileInfo}>
               <View style={styles.avatar}>
@@ -53,108 +54,107 @@ export default function Profile() {
               <Text style={styles.statLabel}>学習日数</Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
 
-        {/* Engine Section Header */}
-        <View style={styles.sectionHeader}>
-          <View style={styles.engineDot} />
-          <Text style={styles.sectionHeaderText}>学習エンジン ・ FSRS-6</Text>
-        </View>
-
-        {/* Engine Card */}
-        <View style={styles.card}>
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>目標定着率</Text>
-            <View style={styles.sliderContainer}>
-               <View style={styles.sliderTrack}>
-                 <View style={styles.sliderFill} />
-                 <View style={styles.sliderThumb} />
-               </View>
-               <Text style={styles.sliderValueText}>90%</Text>
+        {/* This Week's Goal Card */}
+        <View style={styles.goalCard}>
+          <View style={styles.goalHeader}>
+            <Text style={styles.goalTitle}>今週の目標</Text>
+            <View style={styles.goalProgress}>
+              <Text style={styles.goalProgressText}>5 / 7</Text>
+              <Text style={styles.goalProgressLabel}> 日</Text>
             </View>
           </View>
-
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>1日の新規カード上限</Text>
-            <Text style={styles.rowValue}>24</Text>
+          
+          <View style={styles.daysRow}>
+            {[
+              { day: '月', status: 'done' },
+              { day: '火', status: 'done' },
+              { day: '水', status: 'done' },
+              { day: '木', status: 'done' },
+              { day: '金', status: 'done' },
+              { day: '土', status: 'today' },
+              { day: '日', status: 'future' },
+            ].map((item, index) => (
+              <View key={index} style={styles.dayCol}>
+                <View style={[
+                  styles.dayCircle,
+                  item.status === 'done' && styles.dayCircleDone,
+                  item.status === 'today' && styles.dayCircleToday,
+                  item.status === 'future' && styles.dayCircleFuture,
+                ]}>
+                  {item.status === 'done' && <Check size={18} color="#000" strokeWidth={3} />}
+                </View>
+                <Text style={[
+                  styles.dayText,
+                  item.status === 'today' && { color: Colors.dark.primaryOrange },
+                ]}>
+                  {item.day}
+                </Text>
+              </View>
+            ))}
           </View>
+        </View>
 
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>最大間隔</Text>
-            <Text style={styles.rowValue}>1年</Text>
-          </View>
+        {/* Menu Section */}
+        <Text style={styles.sectionTitle}>メニュー</Text>
+        <SettingsCard>
+          <SettingsRow 
+            label="設定" 
+            icon={<Settings size={20} color={Colors.dark.textSecondary} />} 
+            showChevron 
+            onPress={() => router.push('/settings')} 
+          />
+          <SettingsDivider />
+          <SettingsRow 
+            label="実績・バッジ" 
+            valueText="12"
+            icon={<Trophy size={20} color={Colors.dark.textSecondary} />} 
+            showChevron 
+            onPress={() => {}} 
+          />
+          <SettingsDivider />
+          <SettingsRow 
+            label="学習統計" 
+            icon={<BarChart2 size={20} color={Colors.dark.textSecondary} />} 
+            showChevron 
+            onPress={() => router.push('/stats')} 
+          />
+          <SettingsDivider />
+          <SettingsRow 
+            label="ヘルプ・FAQ" 
+            icon={<HelpCircle size={20} color={Colors.dark.textSecondary} />} 
+            showChevron 
+            onPress={() => {}} 
+          />
+          <SettingsDivider />
+          <SettingsRow 
+            label="フィードバックを送る" 
+            icon={<MessageSquare size={20} color={Colors.dark.textSecondary} />} 
+            showChevron 
+            onPress={() => {}} 
+          />
+        </SettingsCard>
 
-          <View style={[styles.cardRow, { paddingBottom: 0 }]}>
-            <View>
-              <Text style={styles.rowLabel}>パラメータ最適化</Text>
-              <Text style={styles.rowSubText}>12,840件のログで再学習</Text>
+        {/* Upgrade Card */}
+        <TouchableOpacity style={styles.upgradeCardWrapper}>
+          <LinearGradient
+            colors={['rgba(255, 90, 54, 0.15)', '#16171B']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.upgradeCard}
+          >
+            <View style={styles.upgradeCardInner}>
+              <View style={styles.upgradeInfo}>
+                <Text style={styles.upgradeTitle}>Kioku Pro</Text>
+                <Text style={styles.upgradeSub}>無制限のデッキ・ピッチ音声・統計</Text>
+              </View>
+              <View style={styles.upgradeButton}>
+                <Text style={styles.upgradeButtonText}>アップグレード</Text>
+              </View>
             </View>
-            <TouchableOpacity style={styles.executeButton}>
-              <Text style={styles.executeButtonText}>実行</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Display Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>表示</Text>
-        </View>
-
-        {/* Display Card */}
-        <View style={styles.card}>
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>ふりがな（既定）</Text>
-            <Switch 
-              value={furiganaEnabled}
-              onValueChange={setFuriganaEnabled}
-              trackColor={{ false: '#2E3135', true: Colors.dark.primaryOrange }}
-              thumbColor={furiganaEnabled ? '#16171B' : '#8E9196'}
-              ios_backgroundColor="#2E3135"
-            />
-          </View>
-
-          <View style={styles.cardRow}>
-            <Text style={styles.rowLabel}>ピッチ表記</Text>
-            <View style={styles.segmentControl}>
-              <TouchableOpacity 
-                style={[styles.segmentButton, pitchAccent === '上線' && { backgroundColor: '#5CB3FF' }]}
-                onPress={() => setPitchAccent('上線')}
-              >
-                <Text style={[styles.segmentText, { color: pitchAccent === '上線' ? '#000' : Colors.dark.textSecondary, fontWeight: pitchAccent === '上線' ? 'bold' : 'normal' }]}>上線</Text>
-              </TouchableOpacity>
-              <Text style={styles.segmentDivider}>＼</Text>
-              <TouchableOpacity 
-                style={[styles.segmentButton, pitchAccent === '数字' && { backgroundColor: '#5CB3FF' }]}
-                onPress={() => setPitchAccent('数字')}
-              >
-                <Text style={[styles.segmentText, { color: pitchAccent === '数字' ? '#000' : Colors.dark.textSecondary, fontWeight: pitchAccent === '数字' ? 'bold' : 'normal' }]}>数字</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={[styles.cardRow, { paddingBottom: 0 }]}>
-            <Text style={styles.rowLabel}>表示フォント</Text>
-            <View style={styles.segmentControl}>
-              <TouchableOpacity 
-                style={[styles.segmentButton, displayFont === '明朝' && { backgroundColor: '#202636' }]}
-                onPress={() => setDisplayFont('明朝')}
-              >
-                <Text style={[styles.segmentText, { color: displayFont === '明朝' ? '#FFF' : Colors.dark.textSecondary }]}>明朝</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.segmentButton, displayFont === 'ゴシック' && { backgroundColor: '#202636' }]}
-                onPress={() => setDisplayFont('ゴシック')}
-              >
-                <Text style={[styles.segmentText, { color: displayFont === 'ゴシック' ? '#FFF' : Colors.dark.textSecondary }]}>ゴシック</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Audio Section Header */}
-        <View style={[styles.sectionHeader, { marginBottom: Spacing.six }]}>
-          <Text style={styles.sectionHeaderText}>音声・データ</Text>
-        </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -166,31 +166,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  scrollContent: {
-    padding: Spacing.three,
-  },
   headerTitle: {
     color: Colors.dark.text,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     fontFamily: Fonts?.sans,
   },
   iconButton: {
     padding: Spacing.one,
   },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 120, // Huge padding to clear the Tab Bar
+  },
   profileCard: {
     backgroundColor: '#16171B',
     borderRadius: BORDER_RADIUS.xl,
-    padding: Spacing.three, // reduced
+    padding: 20,
     borderWidth: 1,
     borderColor: '#2E3135',
-    marginBottom: Spacing.three, // reduced
+    marginBottom: 20,
   },
   profileTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.three, // reduced
+    marginBottom: 20,
   },
   profileInfo: {
     flexDirection: 'row',
@@ -219,13 +221,13 @@ const styles = StyleSheet.create({
   },
   subText: {
     color: Colors.dark.textSecondary,
-    fontSize: 14,
+    fontSize: 13,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.one,
+    paddingTop: Spacing.two,
   },
   statItem: {
     alignItems: 'center',
@@ -246,115 +248,115 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: '#2E3135',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: Spacing.two,
-    marginBottom: Spacing.three,
-    paddingHorizontal: Spacing.one,
-  },
-  engineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.dark.primaryOrange,
-  },
-  sectionHeaderText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 13,
-  },
-  card: {
+  goalCard: {
     backgroundColor: '#16171B',
     borderRadius: BORDER_RADIUS.xl,
-    padding: Spacing.three, // reduced
+    padding: 20,
     borderWidth: 1,
     borderColor: '#2E3135',
-    marginBottom: Spacing.three, // reduced
+    marginBottom: 20,
   },
-  cardRow: {
+  goalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: Spacing.three, // reduced
+    marginBottom: 20,
   },
-  rowLabel: {
+  goalTitle: {
     color: Colors.dark.text,
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  rowValue: {
-    color: Colors.dark.textSecondary,
-    fontSize: 16,
-  },
-  rowSubText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  sliderContainer: {
+  goalProgress: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'baseline',
   },
-  sliderTrack: {
-    width: 100,
-    height: 4,
-    backgroundColor: '#2E3135',
-    borderRadius: 2,
+  goalProgressText: {
+    color: '#66D283',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  goalProgressLabel: {
+    color: '#66D283',
+    fontSize: 13,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dayCol: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  dayCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  sliderFill: {
-    width: '90%',
-    height: 4,
-    backgroundColor: Colors.dark.primaryOrange,
-    borderRadius: 2,
-    position: 'absolute',
-    left: 0,
+  dayCircleDone: {
+    backgroundColor: '#66D283',
   },
-  sliderThumb: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFF',
-    position: 'absolute',
-    left: '85%',
+  dayCircleToday: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.dark.primaryOrange,
   },
-  sliderValueText: {
-    color: Colors.dark.primaryOrange,
-    fontSize: 16,
-    fontWeight: 'bold',
+  dayCircleFuture: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#2E3135',
   },
-  executeButton: {
-    backgroundColor: Colors.dark.primaryOrange,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: BORDER_RADIUS.md,
+  dayText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
   },
-  executeButtonText: {
-    color: '#16171B', // Dark text on orange button
-    fontSize: 14,
-    fontWeight: 'bold',
+  sectionTitle: {
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+    marginBottom: Spacing.three,
+    marginLeft: 4,
   },
-  segmentControl: {
+  upgradeCardWrapper: {
+    marginTop: 8,
+  },
+  upgradeCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#2E3135',
+  },
+  upgradeCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F1014',
-    borderRadius: 8,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: '#1C1D22',
+    justifyContent: 'space-between',
+    padding: 20,
   },
-  segmentButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+  upgradeInfo: {
+    flex: 1,
+    paddingRight: 12,
   },
-  segmentText: {
-    fontSize: 14,
+  upgradeTitle: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
-  segmentDivider: {
-    color: '#2E3135',
-    marginHorizontal: 4,
+  upgradeSub: {
+    color: Colors.dark.textSecondary,
     fontSize: 12,
+  },
+  upgradeButton: {
+    backgroundColor: Colors.dark.primaryOrange,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: BORDER_RADIUS.sm,
+  },
+  upgradeButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 14,
   }
 });
