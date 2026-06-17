@@ -96,7 +96,6 @@ export default function Review() {
   const example = currentItem.example;
   const pitch = currentItem.pitch;
   const kanjiList = currentItem.kanjiList;
-  const firstKanji = kanjiList[0]?.char;
 
   const handleKanjiReplay = (k: string) => {
     setKanjiTriggers(prev => ({ ...prev, [k]: (prev[k] || 0) + 1 }));
@@ -142,12 +141,6 @@ export default function Review() {
         </View>
 
         <View style={styles.pitchRightArea}>
-          <TouchableOpacity style={styles.pitchPill} onPress={() => {
-            router.push(firstKanji ? `/stroke-order?kanji=${firstKanji}` : '/stroke-order');
-          }}>
-            <PenTool size={14} color={Colors.dark.pitchLine} style={{ marginRight: 4 }} />
-            <Text style={styles.pitchPillText}>筆順</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.speakerButtonSmall} onPress={() => speakJapanese(reading)}>
             <Volume2 size={20} color={Colors.dark.pitchLine} />
           </TouchableOpacity>
