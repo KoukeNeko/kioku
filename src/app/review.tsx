@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { X, Volume2 } from "lucide-react-native";
+import Svg, { Line, Circle } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Speech from "expo-speech";
 import { Colors, Spacing, Fonts, BORDER_RADIUS } from "../constants/theme";
 import { FuriganaText } from "../components/ui/FuriganaText";
@@ -137,7 +139,7 @@ export default function Review() {
   );
 
   const renderBack = () => (
-    <ScrollView style={styles.backContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Spacing.six }}>
+    <ScrollView style={styles.backContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
       {/* Top Word Area */}
       <View style={styles.backTopArea}>
         <FuriganaText chunks={displayChunks} fontSize={48} />
@@ -273,7 +275,12 @@ export default function Review() {
         />
       </View>
 
-      <View style={styles.bottomArea}>
+      <LinearGradient 
+        colors={[`${Colors.dark.background}00`, Colors.dark.background, Colors.dark.background]} 
+        locations={[0, 0.4, 1]}
+        style={styles.bottomArea}
+        pointerEvents="box-none"
+      >
         {isFlipped ? (
           <RatingButtons onRating={handleRating} intervals={upcomingIntervals} />
         ) : (
@@ -284,7 +291,7 @@ export default function Review() {
             <Text style={styles.actionHintText}>タップ または スペースキー</Text>
           </View>
         )}
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -342,7 +349,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   bottomArea: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     width: '100%',
+    paddingTop: Spacing.six,
   },
   actionWrapper: {
     alignItems: 'center',
