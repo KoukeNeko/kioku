@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PenTool } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useReviewSession } from "../hooks/useReviewSession";
+import { ActivityIndicator } from "react-native";
 
 export default function Review() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function Review() {
     currentIndex, 
     totalCards, 
     isFinished, 
+    isLoading,
     upcomingIntervals, 
     handleRate,
     resetSession 
@@ -35,6 +37,14 @@ export default function Review() {
     handleRate(rating);
     setIsFlipped(false);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.dark.primaryOrange} />
+      </SafeAreaView>
+    );
+  }
 
   if (isFinished || !currentItem) {
     return (
