@@ -213,8 +213,6 @@ export default function SettingsScreen() {
               <Text style={styles.proBadgeText}>PRO</Text>
             </View>
           </SettingsRow>
-          <SettingsDivider />
-          <SettingsRow centeredContent={<Text style={styles.logoutText}>ログアウト</Text>} paddingVertical={16} onPress={() => router.replace('/login')} />
         </SettingsCard>
 
         {/* Footer */}
