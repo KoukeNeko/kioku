@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import { Colors, Spacing, BORDER_RADIUS } from "../constants/theme";
+import { Colors, Spacing, BORDER_RADIUS } from "../../constants/theme";
 import { Settings, User, Flame } from "lucide-react-native";
 
 export default function Home() {

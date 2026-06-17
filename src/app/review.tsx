@@ -118,7 +118,16 @@ export default function Review() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/");
+              }
+            }}
+          >
             <X size={24} color={Colors.dark.textSecondary} />
           </TouchableOpacity>
           <View style={styles.progressBarContainer}>
@@ -161,11 +170,12 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingTop: Spacing.three, // Middle ground
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 44, // Slightly smaller fixed height
     marginBottom: Spacing.three,
   },
   closeButton: {
@@ -174,9 +184,10 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     flex: 1,
     height: 6,
-    backgroundColor: Colors.dark.backgroundSelected,
-    marginHorizontal: Spacing.two,
+    backgroundColor: '#2E3135',
+    marginHorizontal: Spacing.four,
     borderRadius: 3,
+    overflow: 'hidden',
   },
   progressBarFill: {
     width: '30%',
