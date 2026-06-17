@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 6,
     backgroundColor: '#2E3135',
-    marginHorizontal: Spacing.four,
+    marginHorizontal: Spacing.two, // Reduced margin to make it longer
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -226,13 +226,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   bottomArea: {
-    paddingBottom: Spacing.four,
+    paddingBottom: Spacing.two,
     width: '100%',
   },
   actionWrapper: {
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.four,
+    paddingBottom: Spacing.two,
     width: '100%',
   },
   flipButton: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   sentenceContainer: {
-    padding: Spacing.four,
+    padding: Spacing.three,
     backgroundColor: '#16171B', // slightly darker than card
     borderRadius: BORDER_RADIUS.lg,
     width: '100%',
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   sentenceEnglish: {
     color: Colors.dark.textSecondary,
     fontSize: 14,
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.three,
   },
   sentenceFooter: {
     color: '#4F525A', // darker gray

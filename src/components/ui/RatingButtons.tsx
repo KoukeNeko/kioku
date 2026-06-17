@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     wrapper: {
         alignItems: 'center',
         paddingHorizontal: Spacing.four,
-        paddingBottom: Spacing.four,
+        paddingBottom: Spacing.two,
         width: '100%',
     },
     container: {
