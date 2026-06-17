@@ -1,6 +1,9 @@
 import React from "react";
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from "react-native";
 import { Colors, Spacing, BORDER_RADIUS } from "../../constants/theme";
+import { Settings, User, Flame } from "lucide-react-native";
+import { AppBar } from "../../components/ui/AppBar";
+import { TouchableOpacity } from "react-native";
 
 export default function Stats() {
   
@@ -43,10 +46,13 @@ export default function Stats() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AppBar 
+        centerContent={
+          <Text style={{ color: Colors.dark.text, fontSize: 18, fontWeight: 'bold' }}>統計</Text>
+        }
+      />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        <Text style={styles.pageTitle}>統計</Text>
-
         {/* Top Summary Cards */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
@@ -137,13 +143,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Spacing.four,
-    paddingTop: Spacing.two, // Give title some top space
-  },
-  pageTitle: {
-    color: Colors.dark.text,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: Spacing.five,
+    paddingTop: Spacing.two,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2E3135',
     borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.three, // Reduced padding
     paddingHorizontal: Spacing.two,
     alignItems: 'flex-start',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2E3135',
     borderRadius: BORDER_RADIUS.lg,
-    padding: Spacing.four,
+    padding: Spacing.three, // Reduced padding
     marginBottom: Spacing.five,
   },
   sectionHeader: {

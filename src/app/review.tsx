@@ -6,6 +6,7 @@ import { Colors, Spacing, Fonts, BORDER_RADIUS } from "../constants/theme";
 import { FuriganaText } from "../components/ui/FuriganaText";
 import { FlashCard } from "../components/ui/FlashCard";
 import { RatingButtons } from "../components/ui/RatingButtons";
+import { AppBar } from "../components/ui/AppBar";
 import { Rating } from "ts-fsrs";
 
 import { useRouter } from "expo-router";
@@ -116,8 +117,8 @@ export default function Review() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.topBar}>
+      <AppBar 
+        leftContent={
           <TouchableOpacity 
             style={styles.closeButton} 
             onPress={() => {
@@ -130,13 +131,16 @@ export default function Review() {
           >
             <X size={24} color={Colors.dark.textSecondary} />
           </TouchableOpacity>
+        }
+        centerContent={
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBarFill} />
           </View>
+        }
+        rightContent={
           <Text style={styles.progressText}>23/87</Text>
-        </View>
-
-      </View>
+        }
+      />
 
       <View style={styles.mainArea}>
         <FlashCard 
@@ -167,16 +171,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
-  },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three, // Middle ground
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 44, // Slightly smaller fixed height
-    marginBottom: Spacing.three,
   },
   closeButton: {
     paddingRight: Spacing.three,

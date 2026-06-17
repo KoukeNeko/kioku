@@ -4,14 +4,16 @@ import { Colors, Spacing } from "../../constants/theme";
 
 interface AppBarProps {
   leftContent?: React.ReactNode;
+  centerContent?: React.ReactNode;
   rightContent?: React.ReactNode;
 }
 
-export function AppBar({ leftContent, rightContent }: AppBarProps) {
+export function AppBar({ leftContent, centerContent, rightContent }: AppBarProps) {
   return (
     <View style={styles.header}>
       <View style={styles.topBar}>
         <View style={styles.leftArea}>{leftContent}</View>
+        {centerContent && <View style={styles.centerArea}>{centerContent}</View>}
         <View style={styles.rightArea}>{rightContent}</View>
       </View>
     </View>
@@ -33,6 +35,12 @@ const styles = StyleSheet.create({
   leftArea: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  centerArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rightArea: {
     flexDirection: 'row',
