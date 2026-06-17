@@ -132,6 +132,36 @@ export default function Decks() {
               </View>
             ))}
           </View>
+        ) : viewMode === 'list' ? (
+          <View style={styles.listContainer}>
+            {deckData.map((deck) => (
+              <TouchableOpacity key={deck.id} style={styles.deckCard}>
+                <View style={styles.deckContentRow}>
+                  <View style={styles.deckLeft}>
+                    <View style={styles.deckTitleRow}>
+                      <Text style={styles.deckTitle}>{deck.title.replace('\\n', ' ')}</Text>
+                      <View style={[styles.tagBadge, { backgroundColor: `${deck.color}1A` }]}>
+                        <Text style={[styles.tagText, { color: deck.color }]}>{deck.tag}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.deckSubtitle}>{deck.count} 語</Text>
+                  </View>
+                  <View style={styles.deckRight}>
+                    <Text style={[styles.dueCount, { color: deck.color }]}>{deck.pending}</Text>
+                    <Text style={styles.dueLabel}>予定</Text>
+                  </View>
+                </View>
+                <View style={styles.progressBarTrack}>
+                  <View style={[styles.progressBarFill, { width: `${deck.progress}%`, backgroundColor: deck.color }]} />
+                </View>
+              </TouchableOpacity>
+            ))}
+            {/* New Deck Button (List) */}
+            <TouchableOpacity style={styles.newDeckListCard}>
+              <Plus size={24} color={Colors.dark.textSecondary} />
+              <Text style={styles.newDeckListText}>新規デッキ</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <View style={styles.gridContainer}>
             {deckData.map((deck) => (
@@ -431,5 +461,81 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0F1014',
+  },
+  // List View Styles
+  listContainer: {
+    gap: Spacing.three,
+  },
+  deckCard: {
+    backgroundColor: '#121316',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: Spacing.three,
+    borderWidth: 1,
+    borderColor: '#2E3135',
+  },
+  deckContentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.three,
+  },
+  deckLeft: {
+    flex: 1,
+  },
+  deckTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: Spacing.two,
+  },
+  deckTitle: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  deckSubtitle: {
+    color: Colors.dark.textSecondary,
+    fontSize: 14,
+  },
+  deckRight: {
+    alignItems: 'center',
+    marginLeft: Spacing.three,
+  },
+  dueCount: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: -2,
+  },
+  dueLabel: {
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+  },
+  progressBarTrack: {
+    height: 4,
+    backgroundColor: '#2E3135',
+    borderRadius: 2,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  newDeckListCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0F1014',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: Spacing.four,
+    borderWidth: 2,
+    borderColor: '#2E3135',
+    borderStyle: 'dashed',
+    gap: Spacing.two,
+  },
+  newDeckListText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 14,
+    fontWeight: 'bold',
   }
 });
