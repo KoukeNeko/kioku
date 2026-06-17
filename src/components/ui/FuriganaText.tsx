@@ -11,17 +11,19 @@ interface FuriganaTextProps {
     chunks: FuriganaChunk[];
     fontSize?: number;
     color?: string;
+    align?: 'center' | 'flex-start'; // 單字置中；例句等長文字靠左
 }
 
-export const FuriganaText: React.FC<FuriganaTextProps> = ({ 
-    chunks, 
-    fontSize = 32, 
-    color = Colors.dark.text 
+export const FuriganaText: React.FC<FuriganaTextProps> = ({
+    chunks,
+    fontSize = 32,
+    color = Colors.dark.text,
+    align = 'center'
 }) => {
     const rubySize = fontSize * 0.45; // Furigana is usually around 40-50% of base size
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { justifyContent: align }]}>
             {chunks.map((chunk, index) => (
                 <View key={index} style={styles.chunk}>
                     {/* The reading (Furigana) */}

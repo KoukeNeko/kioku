@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { X, Volume2 } from "lucide-react-native";
-import Svg, { Line, Circle } from "react-native-svg";
+import * as Speech from "expo-speech";
 import { Colors, Spacing, Fonts, BORDER_RADIUS } from "../constants/theme";
 import { FuriganaText } from "../components/ui/FuriganaText";
 import { FlashCard } from "../components/ui/FlashCard";
@@ -15,6 +15,8 @@ import { useReviewSession } from "../hooks/useReviewSession";
 import { ActivityIndicator } from "react-native";
 import kanjiData from "../data/kanjiData.json";
 import { KanjiStrokeBoard } from "../components/ui/KanjiStrokeBoard";
+import { PitchAccent } from "../components/ui/PitchAccent";
+import vocabExtra from "../data/vocabExtra.json";
 
 interface KanjiEntry {
     strokes: string[];
@@ -28,6 +30,28 @@ interface KanjiEntry {
 }
 
 const KANJI_BY_CHAR = kanjiData.kanji as Record<string, KanjiEntry>;
+
+interface FuriganaSegment {
+    ruby: string;
+    rt?: string;
+}
+
+// 由 scripts/etl/build-vocab-extra.mjs 產生：每張卡的例句（Tanaka）+ 音高重音（Kanjium）。
+interface VocabExtraEntry {
+    pitch: number | null;
+    example: { jp: string; furigana: FuriganaSegment[]; en: string } | null;
+}
+
+const VOCAB_EXTRA = vocabExtra as Record<string, VocabExtraEntry>;
+
+const readingOf = (chunks: FuriganaSegment[]): string =>
+    chunks.map((chunk) => chunk.rt ?? chunk.ruby).join('');
+
+// 用裝置端 TTS 唸出日文（語言固定 ja-JP，避免被誤判為中文）。
+const speakJapanese = (text: string) => {
+    Speech.stop();
+    Speech.speak(text, { language: 'ja-JP' });
+};
 
 export default function Review() {
   const router = useRouter();
@@ -91,17 +115,22 @@ export default function Review() {
   const uniqueKanjis = Array.from(new Set(expression.match(/[\u4e00-\u9faf]/g) || []));
   const validKanjis = uniqueKanjis.filter(k => KANJI_BY_CHAR[k as string]);
 
+  // 每張卡的讀音、例句、音高重音（依卡片 id 查表，與牌組資料分離）。
+  const reading = readingOf(displayChunks);
+  const extra = VOCAB_EXTRA[currentItem.id];
+  const example = extra?.example ?? null;
+  const pitch = extra?.pitch ?? null;
+
   const handleKanjiReplay = (k: string) => {
     setKanjiTriggers(prev => ({ ...prev, [k]: (prev[k] || 0) + 1 }));
   };
 
   const renderFront = () => (
     <View style={styles.frontContent}>
-      <Text style={styles.categoryLabel}>動詞 ・ VERB</Text>
       <View style={styles.wordContainer}>
         <FuriganaText chunks={displayChunks} fontSize={56} />
       </View>
-      <TouchableOpacity style={styles.speakerButtonCenter}>
+      <TouchableOpacity style={styles.speakerButtonCenter} onPress={() => speakJapanese(reading)}>
         <Volume2 size={24} color={Colors.dark.pitchLine} />
       </TouchableOpacity>
     </View>
@@ -116,21 +145,14 @@ export default function Review() {
       
       <View style={styles.divider} />
 
-      {/* Pitch Accent Row */}
+      {/* Pitch Accent Row (per-card, from Kanjium) */}
       <View style={styles.pitchRow}>
         <View style={styles.pitchGraphArea}>
-          <Svg height="40" width="100" viewBox="0 0 100 40">
-            <Line x1="10" y1="25" x2="50" y2="10" stroke={Colors.dark.pitchLine} strokeWidth="3" />
-            <Line x1="50" y1="10" x2="90" y2="25" stroke={Colors.dark.pitchLine} strokeWidth="3" />
-            <Circle cx="10" cy="25" r="4" fill={Colors.dark.pitchNodeFill} stroke={Colors.dark.pitchNode} strokeWidth="2" />
-            <Circle cx="50" cy="10" r="4" fill={Colors.dark.pitchNode} />
-            <Circle cx="90" cy="25" r="4" fill={Colors.dark.pitchNodeFill} stroke={Colors.dark.pitchNode} strokeWidth="2" />
-          </Svg>
-          <View style={styles.pitchGraphTextRow}>
-             <Text style={styles.pitchKanaText}>た</Text>
-             <Text style={styles.pitchKanaText}>べ</Text>
-             <Text style={styles.pitchKanaText}>る</Text>
-          </View>
+          {pitch != null ? (
+            <PitchAccent reading={reading} accent={pitch} />
+          ) : (
+            <Text style={styles.pitchKanaText}>{reading}</Text>
+          )}
         </View>
 
         <View style={styles.pitchRightArea}>
@@ -144,45 +166,39 @@ export default function Review() {
             <PenTool size={14} color={Colors.dark.pitchLine} style={{ marginRight: 4 }} />
             <Text style={styles.pitchPillText}>筆順</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.speakerButtonSmall}>
+          <TouchableOpacity style={styles.speakerButtonSmall} onPress={() => speakJapanese(reading)}>
             <Volume2 size={20} color={Colors.dark.pitchLine} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Meaning & POS */}
+      {/* Meaning */}
       <View style={styles.meaningArea}>
         <Text style={styles.meaningText}>{currentItem.english}</Text>
-        <Text style={styles.posText}>一段動詞 • 他動詞 — ichidan, transitive</Text>
       </View>
 
-      {/* Example Sentence Box */}
-      <View style={styles.sentenceContainer}>
-        <View style={styles.sentenceTopRow}>
-           <View>
-             {/* Simple furigana mock for sentence */}
-             <View style={{flexDirection: 'row', marginBottom: 2}}>
-                <Text style={styles.sentenceRuby}>あさ</Text>
-                <Text style={{width: 8}}/>
-                <Text style={styles.sentenceRuby}>はん</Text>
-                <Text style={{width: 14}}/>
-                <Text style={styles.sentenceRuby}>た</Text>
-             </View>
-             <Text style={styles.sentenceJapanese}>朝ご飯を食べました。</Text>
-           </View>
-           <TouchableOpacity style={{padding: 4}}>
-              <Volume2 size={20} color={Colors.dark.pitchLine} />
-           </TouchableOpacity>
+      {/* Example Sentence Box (per-card, from Tanaka Corpus) */}
+      {example && (
+        <View style={styles.sectionArea}>
+          <Text style={styles.sectionTitle}>例文</Text>
+          <View style={styles.sentenceContainer}>
+            <View style={styles.sentenceTopRow}>
+              <View style={styles.sentenceTextWrap}>
+                <FuriganaText chunks={example.furigana} fontSize={20} align="flex-start" />
+              </View>
+              <TouchableOpacity style={{ padding: 4 }} onPress={() => speakJapanese(example.jp)}>
+                <Volume2 size={20} color={Colors.dark.pitchLine} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.sentenceEnglish}>{example.en}</Text>
+          </View>
         </View>
-        <Text style={styles.sentenceEnglish}>I ate breakfast this morning.</Text>
-        
-        <Text style={styles.sentenceFooter}>例文 • Tatoeba CC BY</Text>
-      </View>
+      )}
 
       {/* Embedded Kanji Stroke Orders */}
       {validKanjis.length > 0 && (
-        <View style={styles.kanjiCompositionArea}>
-          <Text style={styles.kanjiSectionTitle}>構成漢字</Text>
+        <View style={styles.sectionArea}>
+          <Text style={styles.sectionTitle}>構成漢字</Text>
           {validKanjis.map((k) => {
             const entry = KANJI_BY_CHAR[k as string];
             const paths = entry.strokes || [];
@@ -212,6 +228,11 @@ export default function Review() {
           })}
         </View>
       )}
+
+      {/* Global Footer for Card Back */}
+      <View style={styles.cardBackFooter}>
+        <Text style={styles.sentenceFooter}>例文 • Tanaka Corpus / Tatoeba CC BY</Text>
+      </View>
 
     </ScrollView>
   );
@@ -465,6 +486,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: Spacing.two,
   },
+  sentenceTextWrap: {
+    flex: 1,
+    marginRight: Spacing.two,
+  },
   sentenceRuby: {
     color: Colors.dark.textSecondary,
     fontSize: 10,
@@ -477,7 +502,11 @@ const styles = StyleSheet.create({
   sentenceEnglish: {
     color: Colors.dark.textSecondary,
     fontSize: 14,
-    marginBottom: Spacing.three,
+  },
+  cardBackFooter: {
+    marginTop: Spacing.six,
+    alignItems: 'center',
+    paddingBottom: Spacing.two,
   },
   sentenceFooter: {
     color: '#4F525A', // darker gray
@@ -485,10 +514,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  kanjiCompositionArea: {
-    marginTop: Spacing.six,
+  sectionArea: {
+    marginTop: Spacing.four,
   },
-  kanjiSectionTitle: {
+  sectionTitle: {
     color: Colors.dark.textSecondary,
     fontSize: 12,
     letterSpacing: 2,

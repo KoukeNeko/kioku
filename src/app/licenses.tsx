@@ -51,6 +51,14 @@ export default function LicensesScreen() {
 
                     <View style={styles.innerDivider} />
 
+                    <Text style={styles.itemName}>JmdictFurigana</Text>
+                    <Text style={styles.licenseText}>Creative Commons Attribution-Share Alike 4.0</Text>
+                    <Text style={styles.descriptionText}>
+                        Furigana alignment data by Doublevil, derived from JMdict (EDRDG).
+                    </Text>
+
+                    <View style={styles.innerDivider} />
+
                     <Text style={styles.itemName}>KanjiVG</Text>
                     <Text style={styles.licenseText}>Creative Commons Attribution-Share Alike 3.0</Text>
                     <Text style={styles.descriptionText}>
@@ -59,10 +67,29 @@ export default function LicensesScreen() {
 
                     <View style={styles.innerDivider} />
 
-                    <Text style={styles.itemName}>Tatoeba</Text>
+                    <Text style={styles.itemName}>Tanaka Corpus (Tatoeba)</Text>
                     <Text style={styles.licenseText}>CC BY 2.0 FR</Text>
                     <Text style={styles.descriptionText}>
-                        Example sentences are from the Tatoeba Project.
+                        Example sentences are from the Tanaka Corpus, distributed via the EDRDG and the Tatoeba Project.
+                    </Text>
+
+                    <View style={styles.innerDivider} />
+
+                    <Text style={styles.itemName}>Kanjium</Text>
+                    <Text style={styles.licenseText}>Creative Commons Attribution-Share Alike 4.0</Text>
+                    <Text style={styles.descriptionText}>
+                        Pitch accent data from the Kanjium project (mifunetoshiro).
+                    </Text>
+                </View>
+
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>語彙データ (Vocabulary)</Text>
+                    <View style={styles.divider} />
+
+                    <Text style={styles.itemName}>JLPT Vocabulary Lists</Text>
+                    <Text style={styles.licenseText}>CC BY / MIT</Text>
+                    <Text style={styles.descriptionText}>
+                        JLPT N1–N5 vocabulary, readings and meanings from tanos.co.uk (Jonathan Waller, CC BY), packaged by open-anki-jlpt-decks (Jamie Sinclair, MIT).
                     </Text>
                 </View>
 
