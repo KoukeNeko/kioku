@@ -7,6 +7,8 @@ import { Settings, ChevronRight } from "lucide-react-native";
 
 export default function Profile() {
   const [furiganaEnabled, setFuriganaEnabled] = useState(true);
+  const [pitchAccent, setPitchAccent] = useState<'上線' | '数字'>('上線');
+  const [displayFont, setDisplayFont] = useState<'明朝' | 'ゴシック'>('明朝');
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -114,12 +116,18 @@ export default function Profile() {
           <View style={styles.cardRow}>
             <Text style={styles.rowLabel}>ピッチ表記</Text>
             <View style={styles.segmentControl}>
-              <TouchableOpacity style={[styles.segmentButton, { backgroundColor: '#5CB3FF' }]}>
-                <Text style={[styles.segmentText, { color: '#000', fontWeight: 'bold' }]}>上線</Text>
+              <TouchableOpacity 
+                style={[styles.segmentButton, pitchAccent === '上線' && { backgroundColor: '#5CB3FF' }]}
+                onPress={() => setPitchAccent('上線')}
+              >
+                <Text style={[styles.segmentText, { color: pitchAccent === '上線' ? '#000' : Colors.dark.textSecondary, fontWeight: pitchAccent === '上線' ? 'bold' : 'normal' }]}>上線</Text>
               </TouchableOpacity>
               <Text style={styles.segmentDivider}>＼</Text>
-              <TouchableOpacity style={styles.segmentButton}>
-                <Text style={[styles.segmentText, { color: Colors.dark.textSecondary }]}>数字</Text>
+              <TouchableOpacity 
+                style={[styles.segmentButton, pitchAccent === '数字' && { backgroundColor: '#5CB3FF' }]}
+                onPress={() => setPitchAccent('数字')}
+              >
+                <Text style={[styles.segmentText, { color: pitchAccent === '数字' ? '#000' : Colors.dark.textSecondary, fontWeight: pitchAccent === '数字' ? 'bold' : 'normal' }]}>数字</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -127,11 +135,17 @@ export default function Profile() {
           <View style={[styles.cardRow, { paddingBottom: 0 }]}>
             <Text style={styles.rowLabel}>表示フォント</Text>
             <View style={styles.segmentControl}>
-              <TouchableOpacity style={[styles.segmentButton, { backgroundColor: '#202636' }]}>
-                <Text style={[styles.segmentText, { color: '#FFF' }]}>明朝</Text>
+              <TouchableOpacity 
+                style={[styles.segmentButton, displayFont === '明朝' && { backgroundColor: '#202636' }]}
+                onPress={() => setDisplayFont('明朝')}
+              >
+                <Text style={[styles.segmentText, { color: displayFont === '明朝' ? '#FFF' : Colors.dark.textSecondary }]}>明朝</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.segmentButton}>
-                <Text style={[styles.segmentText, { color: Colors.dark.textSecondary }]}>ゴシック</Text>
+              <TouchableOpacity 
+                style={[styles.segmentButton, displayFont === 'ゴシック' && { backgroundColor: '#202636' }]}
+                onPress={() => setDisplayFont('ゴシック')}
+              >
+                <Text style={[styles.segmentText, { color: displayFont === 'ゴシック' ? '#FFF' : Colors.dark.textSecondary }]}>ゴシック</Text>
               </TouchableOpacity>
             </View>
           </View>
