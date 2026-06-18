@@ -1,5 +1,4 @@
-import { db } from '../schema';
-import { CONTENT_ALIAS as C } from '../contentDb';
+import { fetchSearch } from '../../api/contentApi';
 
 export interface VocabSearchResult {
   id: string;
@@ -25,98 +24,41 @@ export interface DeckSearchResult {
   vocab_count: number;
 }
 
-export const searchVocab = (query: string, limit: number = 20): VocabSearchResult[] => {
-  if (!query.trim()) return [];
-  const safeQuery = `%${query.trim()}%`;
-  
-  const rows = db.executeSync(
-    `SELECT id, expression, reading, gloss, jlpt
-     FROM ${C}.vocab
-     WHERE expression LIKE ? OR reading LIKE ? OR gloss LIKE ?
-     ORDER BY 
-       CASE WHEN expression = ? OR reading = ? THEN 1
-            WHEN expression LIKE ? OR reading LIKE ? THEN 2
-            ELSE 3 END
-     LIMIT ?`,
-    [safeQuery, safeQuery, safeQuery, query.trim(), query.trim(), `${query.trim()}%`, `${query.trim()}%`, limit]
-  ).rows ?? [];
+export interface SearchResults {
+  vocab: VocabSearchResult[];
+  kanji: KanjiSearchResult[];
+  decks: DeckSearchResult[];
+}
 
-  return rows as VocabSearchResult[];
-};
+const EMPTY_RESULTS: SearchResults = { vocab: [], kanji: [], decks: [] };
 
-export const searchKanji = (query: string, limit: number = 20): KanjiSearchResult[] => {
-  if (!query.trim()) return [];
-  const safeQuery = `%${query.trim()}%`;
-  
-  const rows = db.executeSync(
-    `SELECT char, meanings, on_readings, kun_readings
-     FROM ${C}.kanji
-     WHERE char LIKE ? OR meanings LIKE ? OR on_readings LIKE ? OR kun_readings LIKE ?
-     LIMIT ?`,
-    [safeQuery, safeQuery, safeQuery, safeQuery, limit]
-  ).rows ?? [];
+/** 三類搜尋（單字／漢字／牌組）一次向雲端取回；空字串直接回空結果。 */
+export const search = async (query: string, limit: number = 200): Promise<SearchResults> => {
+  const trimmed = query.trim();
+  if (!trimmed) return EMPTY_RESULTS;
 
-  return rows.map(r => {
-    let meanings = '';
-    let on_readings = '';
-    let kun_readings = '';
-    
-    try { meanings = JSON.parse(r.meanings as string).join(', '); } catch (e) { meanings = r.meanings as string; }
-    try { on_readings = JSON.parse(r.on_readings as string).join(', '); } catch (e) { on_readings = r.on_readings as string; }
-    try { kun_readings = JSON.parse(r.kun_readings as string).join(', '); } catch (e) { kun_readings = r.kun_readings as string; }
-
-    return {
-      char: r.char as string,
-      meanings,
-      on_readings,
-      kun_readings
-    };
-  });
-};
-
-export const searchDecks = (query: string, limit: number = 20): DeckSearchResult[] => {
-  if (!query.trim()) return [];
-  const safeQuery = `%${query.trim()}%`;
-  
-  // Find decks by name OR decks containing matching vocab
-  const rows = db.executeSync(
-    `SELECT d.id, d.name, d.description, d.tags, d.color, 
-            COUNT(DISTINCT v.id) as vocab_count
-     FROM decks d
-     LEFT JOIN cards c ON d.id = c.deck_id
-     LEFT JOIN ${C}.vocab v ON c.vocab_id = v.id 
-                            AND (v.expression LIKE ? OR v.reading LIKE ? OR v.gloss LIKE ?)
-     WHERE d.name LIKE ? OR d.description LIKE ? OR v.id IS NOT NULL
-     GROUP BY d.id
-     LIMIT ?`,
-    [safeQuery, safeQuery, safeQuery, safeQuery, safeQuery, limit]
-  ).rows ?? [];
-
-  return rows.map(r => ({
-    id: r.id as string,
-    name: r.name as string,
-    description: r.description as string,
-    tags: r.tags as string,
-    color: r.color as string,
-    vocab_count: (r.vocab_count as number) || 0
-  }));
-};
-
-/**
- * Counts how many cards in a deck match the query.
- * For the "「こう」を含む X語" feature.
- */
-export const countMatchingVocabInDeck = (deckId: string, query: string): number => {
-  if (!query.trim()) return 0;
-  const safeQuery = `%${query.trim()}%`;
-
-  const result = db.executeSync(
-    `SELECT COUNT(DISTINCT v.id) as count
-     FROM cards c
-     JOIN ${C}.vocab v ON c.vocab_id = v.id
-     WHERE c.deck_id = ? AND (v.expression LIKE ? OR v.reading LIKE ? OR v.gloss LIKE ?)`,
-    [deckId, safeQuery, safeQuery, safeQuery]
-  );
-  
-  return (result.rows[0] as any)?.count ?? 0;
+  const data = await fetchSearch(trimmed, limit);
+  return {
+    vocab: data.vocab.map((hit) => ({
+      id: hit.id,
+      expression: hit.expression,
+      reading: hit.reading,
+      gloss: hit.gloss,
+      jlpt: hit.jlpt,
+    })),
+    kanji: data.kanji.map((hit) => ({
+      char: hit.char,
+      meanings: (hit.meanings ?? []).join(', '),
+      on_readings: (hit.on ?? []).join(', '),
+      kun_readings: (hit.kun ?? []).join(', '),
+    })),
+    decks: data.decks.map((hit) => ({
+      id: hit.id,
+      name: hit.name,
+      description: hit.description,
+      tags: (hit.tags ?? []).join(', '),
+      color: hit.color,
+      vocab_count: hit.vocabCount,
+    })),
+  };
 };

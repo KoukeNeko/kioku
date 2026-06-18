@@ -136,3 +136,38 @@ export const fetchKanjiExamples = async (char: string, limit = 10): Promise<ApiK
   );
   return data.examples;
 };
+
+export interface ApiSearchVocab {
+  id: string;
+  expression: string;
+  reading: string;
+  gloss: string;
+  jlpt: number | null;
+}
+
+export interface ApiSearchKanji {
+  char: string;
+  meanings: string[];
+  on: string[];
+  kun: string[];
+}
+
+export interface ApiSearchDeck {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  color: string;
+  vocabCount: number;
+}
+
+export interface ApiSearchResults {
+  query: string;
+  vocab: ApiSearchVocab[];
+  kanji: ApiSearchKanji[];
+  decks: ApiSearchDeck[];
+}
+
+/** 搜尋：單字／漢字／牌組三類一次取回。 */
+export const fetchSearch = async (query: string, limit = 50): Promise<ApiSearchResults> =>
+  fetchJson<ApiSearchResults>(`/api/search?q=${encodeURIComponent(query)}&limit=${limit}`);

@@ -5,10 +5,13 @@ import { Stack, useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors, Spacing, BORDER_RADIUS } from "../constants/theme";
-import { searchVocab, searchKanji, searchDecks, VocabSearchResult, KanjiSearchResult, DeckSearchResult } from "../db/repositories/searchRepository";
+import { search, VocabSearchResult, KanjiSearchResult, DeckSearchResult } from "../db/repositories/searchRepository";
 import { HighlightText } from "../components/ui/HighlightText";
 
 type SearchTab = 'all' | 'vocab' | 'kanji' | 'deck';
+
+const SEARCH_DEBOUNCE_MS = 250;
+const SEARCH_RESULT_LIMIT = 200;
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -22,19 +25,35 @@ export default function SearchScreen() {
 
   useEffect(() => {
     const q = query.trim();
-    if (q) {
-      setVocabResults(searchVocab(q, 200));
-      setKanjiResults(searchKanji(q, 200));
-      setDecksResults(searchDecks(q, 200));
-    } else {
+    if (!q) {
       setVocabResults([]);
       setKanjiResults([]);
-      setDecksResults([]);
+      setDeckResults([]);
+      return;
     }
-  }, [query]);
 
-  // Handle deck results update
-  const setDecksResults = (res: DeckSearchResult[]) => setDeckResults(res);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await search(q, SEARCH_RESULT_LIMIT);
+        if (cancelled) return;
+        setVocabResults(results.vocab);
+        setKanjiResults(results.kanji);
+        setDeckResults(results.decks);
+      } catch (error) {
+        console.error('搜尋失敗', error);
+        if (cancelled) return;
+        setVocabResults([]);
+        setKanjiResults([]);
+        setDeckResults([]);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   const handleCancel = () => {
     router.back();
