@@ -11,6 +11,7 @@ import kanjiData from '../data/kanjiData.json';
 import { getKanjiWords, getKanjiExamples, RelatedWord, RelatedExample } from '../db/repositories/kanjiRepository';
 import { FuriganaText } from '../components/ui/FuriganaText';
 import { ExampleSentenceCard } from '../components/ui/ExampleSentenceCard';
+import { BackButton } from '../components/ui/BackButton';
 
 const { width } = Dimensions.get('window');
 
@@ -61,11 +62,7 @@ export default function StrokeOrder() {
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Header */}
             <AppBar
-                leftContent={
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <ChevronLeft size={24} color={Colors.dark.textSecondary} />
-                    </TouchableOpacity>
-                }
+                leftContent={<BackButton />}
                 centerContent={
                     <Text style={styles.headerTitle}>{kanjiChar}</Text>
                 }
@@ -130,7 +127,7 @@ export default function StrokeOrder() {
                             {entry.on.map((reading, idx) => (
                                 <TouchableOpacity key={`on-${idx}`} style={styles.readingChip} onPress={() => speakJapanese(reading)}>
                                     <Text style={styles.readingText}>{reading}</Text>
-                                    <Volume2 size={16} color={Colors.dark.pitchBlue} style={{ marginLeft: 6 }} />
+                                    <Volume2 size={16} color={Colors.dark.primaryOrange} style={{ marginLeft: 6 }} />
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -147,7 +144,7 @@ export default function StrokeOrder() {
                                 return (
                                     <TouchableOpacity key={`kun-${idx}`} style={styles.readingChip} onPress={() => speakJapanese(cleanReading)}>
                                         <Text style={styles.readingText}>{reading}</Text>
-                                        <Volume2 size={16} color={Colors.dark.pitchBlue} style={{ marginLeft: 6 }} />
+                                        <Volume2 size={16} color={Colors.dark.primaryOrange} style={{ marginLeft: 6 }} />
                                     </TouchableOpacity>
                                 );
                             })}
@@ -195,14 +192,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.dark.background,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#1C1D22',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     headerTitle: {
         color: Colors.dark.text,

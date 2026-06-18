@@ -14,6 +14,7 @@ import { AppBar } from '../components/ui/AppBar';
 import { Rating } from "ts-fsrs";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PenTool } from "lucide-react-native";
+import { BackButton } from "../components/ui/BackButton";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useReviewSession, VocabItem } from "../hooks/useReviewSession";
 import { getVocabById } from "../db/repositories/cardRepository";
@@ -119,7 +120,7 @@ export default function Review() {
         <FuriganaText chunks={displayChunks} fontSize={56} />
       </View>
       <TouchableOpacity style={styles.speakerButtonCenter} onPress={() => speakJapanese(reading)}>
-        <Volume2 size={24} color={Colors.dark.pitchLine} />
+        <Volume2 size={24} color={Colors.dark.primaryOrange} />
       </TouchableOpacity>
     </View>
   );
@@ -219,26 +220,38 @@ export default function Review() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <AppBar 
         leftContent={
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace("/");
-              }
-            }}
-          >
-            <X size={24} color={Colors.dark.textSecondary} />
-          </TouchableOpacity>
+          isDictionaryMode ? (
+            <BackButton />
+          ) : (
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/");
+                }
+              }}
+            >
+              <X size={24} color={Colors.dark.textSecondary} />
+            </TouchableOpacity>
+          )
         }
         centerContent={
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBarFill, { width: `${(currentIndex / totalCards) * 100}%` }]} />
-          </View>
+          isDictionaryMode ? (
+            <Text style={{ color: Colors.dark.textSecondary, fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>単語詳細</Text>
+          ) : (
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBarFill, { width: `${(currentIndex / totalCards) * 100}%` }]} />
+            </View>
+          )
         }
         rightContent={
-          <Text style={styles.progressText}>{currentIndex}/{totalCards}</Text>
+          isDictionaryMode ? (
+            <View style={{ width: 40 }} />
+          ) : (
+            <Text style={styles.progressText}>{currentIndex}/{totalCards}</Text>
+          )
         }
       />
 
