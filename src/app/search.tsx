@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Dimensions } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Colors, Spacing, BORDER_RADIUS } from "../constants/theme";
 import { searchVocab, searchKanji, searchDecks, VocabSearchResult, KanjiSearchResult, DeckSearchResult } from "../db/repositories/searchRepository";
 import { HighlightText } from "../components/ui/HighlightText";
@@ -146,41 +148,13 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       
-      {/* Search Header */}
-      <View style={styles.header}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={Colors.dark.textSecondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search..."
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            selectionColor={Colors.dark.primaryOrange}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
-              <View style={styles.clearIconBg}>
-                <X size={14} color={Colors.dark.background} />
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity onPress={handleCancel}>
-          <Text style={styles.cancelText}>取消</Text>
-        </TouchableOpacity>
-      </View>
-
-      {renderTabs()}
-
-      {/* Results */}
+      {/* Results (render first so it goes under absolute header) */}
       <ScrollView 
         style={styles.scrollArea} 
-        contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.four }}
+        contentContainerStyle={{ paddingTop: insets.top + 120, paddingBottom: insets.bottom + Spacing.four }}
         showsVerticalScrollIndicator={false} 
         keyboardShouldPersistTaps="handled"
       >
@@ -188,7 +162,44 @@ export default function SearchScreen() {
         {(activeTab === 'all' || activeTab === 'kanji') && renderKanjiResults()}
         {(activeTab === 'all' || activeTab === 'deck') && renderDeckResults()}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Floating Gradient Header */}
+      <LinearGradient 
+        colors={[Colors.dark.background, Colors.dark.background, `${Colors.dark.background}00`]}
+        locations={[0, 0.8, 1]}
+        style={[styles.floatingHeader, { paddingTop: insets.top }]}
+        pointerEvents="box-none"
+      >
+        <View style={styles.header} pointerEvents="auto">
+          <View style={styles.searchBar}>
+            <Search size={20} color={Colors.dark.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search..."
+              placeholderTextColor={Colors.dark.textSecondary}
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              selectionColor={Colors.dark.primaryOrange}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery("")}>
+                <View style={styles.clearIconBg}>
+                  <X size={14} color={Colors.dark.background} />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity onPress={handleCancel}>
+            <Text style={styles.cancelText}>取消</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View pointerEvents="auto">
+          {renderTabs()}
+        </View>
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -196,6 +207,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
   header: {
     flexDirection: 'row',
