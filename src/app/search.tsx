@@ -106,7 +106,7 @@ export default function SearchScreen() {
             <TouchableOpacity
               key={item.char}
               style={styles.kanjiCard}
-              onPress={() => router.push(`/stroke-order?char=${item.char}`)}
+              onPress={() => router.push(`/stroke-order?kanji=${item.char}`)}
             >
               <HighlightText text={item.char} highlight={query} style={styles.kanjiCharText} />
               <View style={styles.kanjiDetails}>
