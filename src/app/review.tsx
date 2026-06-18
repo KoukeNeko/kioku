@@ -12,10 +12,11 @@ import { KanjiStrokeBoard } from '../components/ui/KanjiStrokeBoard';
 import { ExampleSentenceCard } from '../components/ui/ExampleSentenceCard';
 import { AppBar } from '../components/ui/AppBar';
 import { Rating } from "ts-fsrs";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PenTool } from "lucide-react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useReviewSession } from "../hooks/useReviewSession";
+import { useReviewSession, VocabItem } from "../hooks/useReviewSession";
+import { getVocabById } from "../db/repositories/cardRepository";
 import { ActivityIndicator } from "react-native";
 import { PitchAccent } from "../components/ui/PitchAccent";
 
@@ -35,20 +36,22 @@ const speakJapanese = (text: string) => {
 
 export default function Review() {
   const router = useRouter();
-  const { deckId } = useLocalSearchParams<{ deckId?: string }>();
-  const [isFlipped, setIsFlipped] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { deckId, vocabId } = useLocalSearchParams<{ deckId?: string, vocabId?: string }>();
+  const isDictionaryMode = !!vocabId;
+  const dictItem = isDictionaryMode ? getVocabById(vocabId as string) : null;
+  const [isFlipped, setIsFlipped] = useState(isDictionaryMode);
   const [kanjiTriggers, setKanjiTriggers] = useState<Record<string, number>>({});
 
-  const { 
-    currentItem, 
-    currentIndex, 
-    totalCards, 
-    isFinished, 
-    isLoading,
-    upcomingIntervals, 
-    handleRate,
-    resetSession 
-  } = useReviewSession(deckId);
+  const session = useReviewSession(isDictionaryMode ? undefined : deckId);
+  const currentItem = isDictionaryMode ? dictItem : session.currentItem;
+  const currentIndex = isDictionaryMode ? 1 : session.currentIndex;
+  const totalCards = isDictionaryMode ? 1 : session.totalCards;
+  const isFinished = isDictionaryMode ? !dictItem : session.isFinished;
+  const isLoading = isDictionaryMode ? false : session.isLoading;
+  const upcomingIntervals = session.upcomingIntervals;
+  const handleRate = session.handleRate;
+  const resetSession = session.resetSession;
 
   const handleFlip = () => {
     setIsFlipped(true);
@@ -61,7 +64,7 @@ export default function Review() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
         <ActivityIndicator size="large" color={Colors.dark.primaryOrange} />
       </SafeAreaView>
     );
@@ -69,7 +72,7 @@ export default function Review() {
 
   if (isFinished || !currentItem) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
         <Text style={{ color: Colors.dark.text, fontSize: 24, fontWeight: 'bold', marginBottom: Spacing.four }}>
           複習完了！
         </Text>
@@ -122,7 +125,11 @@ export default function Review() {
   );
 
   const renderBack = () => (
-    <ScrollView style={styles.backContent} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+    <ScrollView 
+      style={styles.backContent} 
+      showsVerticalScrollIndicator={false} 
+      contentContainerStyle={{ paddingBottom: isDictionaryMode ? (insets.bottom + Spacing.four) : (140 + insets.bottom) }}
+    >
       {/* Top Word Area */}
       <View style={styles.backTopArea}>
         <Text style={[styles.categoryLabel, { marginBottom: Spacing.two }]}>{getDeckLabel()}</Text>
@@ -209,7 +216,7 @@ export default function Review() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <AppBar 
         leftContent={
           <TouchableOpacity 
@@ -244,23 +251,25 @@ export default function Review() {
         />
       </View>
 
-      <LinearGradient 
-        colors={[`${Colors.dark.background}00`, Colors.dark.background, Colors.dark.background]} 
-        locations={[0, 0.4, 1]}
-        style={styles.bottomArea}
-        pointerEvents="box-none"
-      >
-        {isFlipped ? (
-          <RatingButtons onRating={handleRating} intervals={upcomingIntervals} />
-        ) : (
-          <View style={styles.actionWrapper}>
-            <TouchableOpacity style={styles.flipButton} onPress={handleFlip}>
-              <Text style={styles.flipButtonText}>答えを表示</Text>
-            </TouchableOpacity>
-            <Text style={styles.actionHintText}>タップ または スペースキー</Text>
-          </View>
-        )}
-      </LinearGradient>
+      {!isDictionaryMode && (
+        <LinearGradient 
+          colors={[`${Colors.dark.background}00`, Colors.dark.background, Colors.dark.background]} 
+          locations={[0, 0.4, 1]}
+          style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom, Spacing.four) }]}
+          pointerEvents="box-none"
+        >
+          {isFlipped ? (
+            <RatingButtons onRating={handleRating} intervals={upcomingIntervals} />
+          ) : (
+            <View style={styles.actionWrapper}>
+              <TouchableOpacity style={styles.flipButton} onPress={handleFlip}>
+                <Text style={styles.flipButtonText}>答えを表示</Text>
+              </TouchableOpacity>
+              <Text style={styles.actionHintText}>タップ または スペースキー</Text>
+            </View>
+          )}
+        </LinearGradient>
+      )}
     </SafeAreaView>
   );
 }

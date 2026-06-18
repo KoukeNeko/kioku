@@ -12,15 +12,21 @@ interface ExampleSentenceCardProps {
         furigana: any[];
     };
     style?: StyleProp<ViewStyle>;
+    onPress?: () => void;
 }
 
 const speakJapanese = (text: string) => {
     Speech.speak(text, { language: 'ja-JP', rate: 0.9 });
 };
 
-export const ExampleSentenceCard: React.FC<ExampleSentenceCardProps> = ({ example, style }) => {
+export const ExampleSentenceCard: React.FC<ExampleSentenceCardProps> = ({ example, style, onPress }) => {
+    const Container = onPress ? TouchableOpacity : View;
     return (
-        <View style={[styles.sentenceContainer, style]}>
+        <Container 
+            style={[styles.sentenceContainer, style]} 
+            onPress={onPress}
+            activeOpacity={onPress ? 0.7 : 1}
+        >
             <View style={styles.sentenceTopRow}>
                 <View style={styles.sentenceTextWrap}>
                     <FuriganaText chunks={example.furigana} fontSize={20} align="flex-start" />
@@ -30,7 +36,7 @@ export const ExampleSentenceCard: React.FC<ExampleSentenceCardProps> = ({ exampl
                 </TouchableOpacity>
             </View>
             <Text style={styles.sentenceEnglish}>{example.en}</Text>
-        </View>
+        </Container>
     );
 };
 

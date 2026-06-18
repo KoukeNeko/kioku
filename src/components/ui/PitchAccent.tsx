@@ -13,8 +13,8 @@ interface PitchAccentProps {
   accent: number;
 }
 
-const SMALL_KANA = 'ゃゅょぁぃぅぇぉゎゕゖ';
-const MORA_WIDTH = 22;
+const SMALL_KANA = 'ゃゅょぁぃぅぇぉゎゕゖャュョァィゥェォヮヵヶ';
+const MORA_WIDTH = 28;
 const HIGH_Y = 8;
 const LOW_Y = 26;
 const NODE_RADIUS = 4;
@@ -78,7 +78,12 @@ export const PitchAccent: React.FC<PitchAccentProps> = ({ reading, accent }) => 
       </Svg>
       <View style={[styles.kanaRow, { width }]}>
         {morae.map((mora, index) => (
-          <Text key={`kana-${index}`} style={[styles.kana, { width: MORA_WIDTH }]}>
+          <Text 
+            key={`kana-${index}`} 
+            style={[styles.kana, { width: MORA_WIDTH }]}
+            numberOfLines={1}
+            allowFontScaling={false}
+          >
             {mora}
           </Text>
         ))}

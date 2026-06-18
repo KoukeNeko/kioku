@@ -87,6 +87,40 @@ const CARD_SELECT = `
   FROM cards c
   JOIN ${C}.vocab v ON c.vocab_id = v.id`;
 
+export const getVocabById = (vocabId: string): VocabItem | null => {
+  const row = db.executeSync(
+    `SELECT v.id AS vocab_id, v.expression, v.reading, v.furigana, v.gloss, v.pos, v.pitch, v.jlpt
+     FROM ${C}.vocab v
+     WHERE v.id = ? LIMIT 1`,
+    [vocabId]
+  ).rows?.[0] as any;
+  if (!row) return null;
+
+  const dummyCard: Card = {
+    due: new Date(),
+    stability: 0,
+    difficulty: 0,
+    elapsed_days: 0,
+    scheduled_days: 0,
+    reps: 0,
+    lapses: 0,
+    state: 0,
+  };
+
+  return {
+    id: row.vocab_id,
+    kanji: parseJson<FuriganaChunk[]>(row.furigana, [{ ruby: row.expression }]),
+    reading: row.reading,
+    english: row.gloss,
+    pos: row.pos ?? null,
+    pitch: row.pitch ?? null,
+    jlpt: row.jlpt ?? null,
+    example: loadExample(row.vocab_id),
+    kanjiList: loadKanjiList(row.vocab_id),
+    fsrsCard: dummyCard,
+  };
+};
+
 export const getDueCards = (newLimit: number = 20, reviewLimit: number = 50, deckId?: string): VocabItem[] => {
   const now = Date.now();
   const deckClause = deckId ? 'AND c.deck_id = ?' : '';

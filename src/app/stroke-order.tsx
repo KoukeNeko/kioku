@@ -176,6 +176,7 @@ export default function StrokeOrder() {
                                     en: w.gloss.split(';')[0],
                                     furigana: w.furigana
                                 }} 
+                                onPress={() => router.push(`/review?vocabId=${w.id}`)}
                             />
                         ))}
                         {tab === 'sentences' && examples.map((e, idx) => (
