@@ -4,8 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
 import Svg, { Circle } from 'react-native-svg';
-import { getDailyMetrics, getStreak, getReviewedTodayCount } from '../../db/repositories/cardRepository';
-import { getAllDecksWithMetrics, Deck } from '../../db/repositories/deckRepository';
+import { getDailyMetrics, getStreak, getReviewedTodayCount, getStudyTimeStats } from '../../db/repositories/cardRepository';
 import { useState, useCallback } from 'react';
 
 const CircularProgress = ({ progress, size, strokeWidth, color, trackColor, children }: any) => {
@@ -49,9 +48,9 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   const [metrics, setMetrics] = useState({ newCards: 0, learningCards: 0, reviewCards: 0 });
-  const [decks, setDecks] = useState<Deck[]>([]);
   const [streak, setStreak] = useState(0);
   const [reviewedToday, setReviewedToday] = useState(0);
+  const [studyMinutes, setStudyMinutes] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,14 +65,11 @@ export default function Home() {
         });
         setStreak(getStreak());
         setReviewedToday(getReviewedTodayCount());
+        const timeStats = getStudyTimeStats();
+        setStudyMinutes(Math.floor(timeStats.todayMs / 60000));
       } catch (e) {
         console.error('Failed to load metrics', e);
       }
-
-      // 牌組目錄走雲端（async）。
-      getAllDecksWithMetrics()
-        .then((decksData) => { if (!cancelled) setDecks(decksData); })
-        .catch((e) => console.error('Failed to load decks', e));
 
       return () => { cancelled = true; };
     }, [])
@@ -141,6 +137,11 @@ export default function Home() {
                 <Text style={styles.statLabel}>復習</Text>
                 <Text style={styles.statValue}>{metrics.reviewCards}</Text>
               </View>
+              <View style={[styles.statRow, { paddingTop: Spacing.two, borderTopWidth: 1, borderTopColor: '#2E3135' }]}>
+                <View style={[styles.statDot, { backgroundColor: Colors.dark.primaryOrange }]} />
+                <Text style={styles.statLabel}>今日の学習</Text>
+                <Text style={styles.statValue}>{studyMinutes}分</Text>
+              </View>
             </View>
           </View>
 
@@ -160,55 +161,36 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* Decks Header */}
+        {/* Modes Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>デッキ</Text>
-          <TouchableOpacity onPress={() => router.push('/decks')}>
-            <Text style={styles.viewAllText}>すべて表示</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>學習模式</Text>
         </View>
 
-        {/* Decks List */}
-        <View style={styles.deckList}>
-          {decks.map(deck => {
-            const dueCount = deck.metrics.dueCards; // This includes ALL new cards, maybe we should cap it or just display it. Let's cap visual new cards to 20 for the deck due too? Wait, dueCards in deck metric is total due. 
-            // We can just use the same logic: newCards capped to 20 per deck for display.
-            const displayDue = Math.min(deck.metrics.newCards, 20) + deck.metrics.learningCards + deck.metrics.reviewCards;
-            const progressRatio = deck.metrics.totalCards > 0 ? (deck.metrics.totalCards - displayDue) / deck.metrics.totalCards : 1;
-            const progressPercent = Math.max(0, Math.min(100, progressRatio * 100));
-            const isCompleted = displayDue === 0;
+        {/* Modes List */}
+        <View style={styles.modeList}>
+          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
+            <Text style={styles.modeIcon}>📖</Text>
+            <View style={styles.modeInfo}>
+              <Text style={styles.modeTitle}>略讀</Text>
+              <Text style={styles.modeSubtitle}>快速瀏覽詞彙</Text>
+            </View>
+          </TouchableOpacity>
 
-            return (
-              <TouchableOpacity 
-                key={deck.id} 
-                style={styles.deckCard} 
-                onPress={() => router.push(`/deck/${deck.id}`)}
-              >
-                <View style={styles.deckContentRow}>
-                  <View style={styles.deckLeft}>
-                    <View style={styles.deckTitleRow}>
-                      <Text style={styles.deckTitle}>{deck.name}</Text>
-                      {deck.tags && deck.tags.length > 0 && (
-                        <View style={[styles.tagBadge, { backgroundColor: '#1C2939' }]}>
-                          <Text style={[styles.tagText, { color: '#68A5FF' }]}>{deck.tags[0]}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.deckSubtitle}>{deck.description}</Text>
-                  </View>
-                  <View style={styles.deckRight}>
-                    <Text style={[styles.dueCount, { color: isCompleted ? '#66D283' : Colors.dark.primaryOrange }]}>
-                      {displayDue}
-                    </Text>
-                    <Text style={styles.dueLabel}>予定</Text>
-                  </View>
-                </View>
-                <View style={styles.progressBarTrack}>
-                  <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: isCompleted ? '#66D283' : Colors.dark.primaryOrange }]} />
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
+            <Text style={styles.modeIcon}>📇</Text>
+            <View style={styles.modeInfo}>
+              <Text style={styles.modeTitle}>閃卡</Text>
+              <Text style={styles.modeSubtitle}>常規記憶訓練</Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
+            <Text style={styles.modeIcon}>📝</Text>
+            <View style={styles.modeInfo}>
+              <Text style={styles.modeTitle}>小考</Text>
+              <Text style={styles.modeSubtitle}>驗證學習成果</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
       </ScrollView>
@@ -336,71 +318,33 @@ const styles = StyleSheet.create({
     color: Colors.dark.primaryOrange,
     fontSize: 14,
   },
-  deckList: {
-    gap: Spacing.three, // reduced from four
+  modeList: {
+    gap: Spacing.three,
   },
-  deckCard: {
+  modeCard: {
     backgroundColor: '#121316',
     borderRadius: BORDER_RADIUS.lg,
-    padding: Spacing.three,
+    padding: Spacing.four,
     borderWidth: 1,
     borderColor: '#2E3135',
-  },
-  deckContentRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.three,
   },
-  deckLeft: {
+  modeIcon: {
+    fontSize: 28,
+    marginRight: Spacing.three,
+  },
+  modeInfo: {
     flex: 1,
   },
-  deckTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    gap: Spacing.two,
-  },
-  deckTitle: {
+  modeTitle: {
     color: Colors.dark.text,
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
-  tagBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  tagText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  deckSubtitle: {
+  modeSubtitle: {
     color: Colors.dark.textSecondary,
     fontSize: 14,
-  },
-  deckRight: {
-    alignItems: 'center',
-    marginLeft: Spacing.three,
-  },
-  dueCount: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: -2,
-  },
-  dueLabel: {
-    color: Colors.dark.textSecondary,
-    fontSize: 10,
-  },
-  progressBarTrack: {
-    height: 4,
-    backgroundColor: '#2E3135',
-    borderRadius: 2,
-    width: '100%',
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 2,
   }
 });
