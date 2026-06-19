@@ -1,11 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useCallback, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
+import { BookOpen, Layers, FileText, ChevronDown } from "lucide-react-native";
 import Svg, { Circle } from 'react-native-svg';
 import { getDailyMetrics, getStreak, getReviewedTodayCount, getStudyTimeStats } from '../../db/repositories/cardRepository';
-import { useState, useCallback } from 'react';
+import { getSelectedDecks, setSelectedDecks } from '../../db/repositories/selectedDecksRepository';
+import { fetchDecks, ApiDeck } from '../../api/contentApi';
 
 const CircularProgress = ({ progress, size, strokeWidth, color, trackColor, children }: any) => {
   const radius = (size - strokeWidth) / 2;
@@ -52,28 +54,71 @@ export default function Home() {
   const [reviewedToday, setReviewedToday] = useState(0);
   const [studyMinutes, setStudyMinutes] = useState(0);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [availableDecks, setAvailableDecks] = useState<ApiDeck[]>([]);
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
+
+  // 嘗試預載以供按鈕顯示文字
+  useEffect(() => {
+    fetchDecks().then(setAvailableDecks).catch(console.error);
+  }, []);
+
+  const loadMetrics = useCallback(() => {
+    try {
+      const data = getDailyMetrics();
+      setMetrics({
+        newCards: Math.min(data.newCards, 20),
+        learningCards: data.learningCards,
+        reviewCards: data.reviewCards
+      });
+      setStreak(getStreak());
+      setReviewedToday(getReviewedTodayCount());
+      const timeStats = getStudyTimeStats();
+      setStudyMinutes(Math.floor(timeStats.todayMs / 60000));
+    } catch (e) {
+      console.error('Failed to load metrics', e);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      // 本機指標即時可得（同步）。
-      try {
-        const data = getDailyMetrics();
-        setMetrics({
-          newCards: Math.min(data.newCards, 20),
-          learningCards: data.learningCards,
-          reviewCards: data.reviewCards
-        });
-        setStreak(getStreak());
-        setReviewedToday(getReviewedTodayCount());
-        const timeStats = getStudyTimeStats();
-        setStudyMinutes(Math.floor(timeStats.todayMs / 60000));
-      } catch (e) {
-        console.error('Failed to load metrics', e);
-      }
-
-      return () => { cancelled = true; };
-    }, [])
+      loadMetrics();
+      return () => {};
+    }, [loadMetrics])
   );
+
+  const handleOpenModal = () => {
+    setTempSelectedIds(getSelectedDecks());
+    setModalVisible(true);
+  };
+
+  const handleConfirmSelection = () => {
+    setSelectedDecks(tempSelectedIds);
+    setModalVisible(false);
+    loadMetrics();
+  };
+
+  const handleToggleDeck = (id: string) => {
+    setTempSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectedDecks = getSelectedDecks();
+  let selectorText = "全部";
+  if (selectedDecks.length === 1) {
+    const deck = availableDecks.find(d => d.id === selectedDecks[0]);
+    if (deck) {
+      selectorText = deck.name.replace('JLPT ', '');
+    }
+  } else if (selectedDecks.length > 1) {
+    const firstDeck = availableDecks.find(d => d.id === selectedDecks[0]);
+    if (firstDeck) {
+      selectorText = `${firstDeck.name.replace('JLPT ', '')} +${selectedDecks.length - 1}`;
+    } else {
+      selectorText = `多個範圍`;
+    }
+  }
 
   const totalDue = metrics.newCards + metrics.learningCards + metrics.reviewCards;
   // 進度環 = 今天已複習 / (已複習 + 尚待複習)。全部完成時為滿。
@@ -92,7 +137,10 @@ export default function Home() {
         
         {/* Header Row */}
         <View style={styles.headerRow}>
-          <Text style={styles.dateText}>{dateText}</Text>
+          <TouchableOpacity style={styles.selectorChip} onPress={handleOpenModal}>
+            <Text style={styles.selectorChipText}>{selectorText}</Text>
+            <ChevronDown size={16} color={Colors.dark.textSecondary} />
+          </TouchableOpacity>
           <View style={styles.streakContainer}>
             <Text style={{ fontSize: 14 }}>🔥</Text>
             <Text style={styles.streakText}>{streak}</Text>
@@ -168,32 +216,95 @@ export default function Home() {
 
         {/* Modes List */}
         <View style={styles.modeList}>
-          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
-            <Text style={styles.modeIcon}>📖</Text>
+          <TouchableOpacity style={styles.modeCard} onPress={() => router.push('/skim')}>
+            <View style={styles.modeIcon}>
+              <BookOpen size={28} color={Colors.dark.primaryOrange} />
+            </View>
             <View style={styles.modeInfo}>
               <Text style={styles.modeTitle}>略讀</Text>
               <Text style={styles.modeSubtitle}>快速瀏覽詞彙</Text>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
-            <Text style={styles.modeIcon}>📇</Text>
+          <TouchableOpacity style={styles.modeCard} onPress={() => router.push('/review')}>
+            <View style={styles.modeIcon}>
+              <Layers size={28} color={Colors.dark.primaryOrange} />
+            </View>
             <View style={styles.modeInfo}>
               <Text style={styles.modeTitle}>閃卡</Text>
               <Text style={styles.modeSubtitle}>常規記憶訓練</Text>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.modeCard} onPress={() => {}}>
-            <Text style={styles.modeIcon}>📝</Text>
+          <TouchableOpacity 
+            style={[styles.modeCard, { opacity: 0.6 }]} 
+            onPress={() => Alert.alert('近日公開', 'この機能は現在開発中です。お楽しみに！')}
+          >
+            <View style={styles.modeIcon}>
+              <FileText size={28} color={Colors.dark.textSecondary} />
+            </View>
             <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>小考</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <Text style={styles.modeTitle}>小考</Text>
+                <View style={{ backgroundColor: '#2E3135', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                  <Text style={{ color: Colors.dark.textSecondary, fontSize: 10, fontWeight: 'bold' }}>Coming soon</Text>
+                </View>
+              </View>
               <Text style={styles.modeSubtitle}>驗證學習成果</Text>
             </View>
           </TouchableOpacity>
         </View>
 
       </ScrollView>
+
+      {/* Range Selector Modal */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>學習範圍</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: Spacing.one }}>
+                <Text style={styles.modalCloseText}>取消</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+              <TouchableOpacity 
+                style={styles.modalRow} 
+                onPress={() => setTempSelectedIds([])}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, tempSelectedIds.length === 0 && styles.checkboxActive]}>
+                  {tempSelectedIds.length === 0 && <View style={styles.checkboxInner} />}
+                </View>
+                <Text style={styles.modalRowTitle}>全部</Text>
+              </TouchableOpacity>
+              
+              {availableDecks.map(deck => {
+                const isSelected = tempSelectedIds.includes(deck.id);
+                return (
+                  <TouchableOpacity 
+                    key={deck.id} 
+                    style={styles.modalRow} 
+                    onPress={() => handleToggleDeck(deck.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                      {isSelected && <View style={styles.checkboxInner} />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.modalRowTitle}>{deck.name}</Text>
+                      <Text style={styles.modalRowSub}>{deck.count} 枚</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmSelection}>
+              <Text style={styles.confirmButtonText}>確定</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -210,12 +321,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.two,
+    marginBottom: Spacing.four,
   },
-  dateText: {
-    color: Colors.dark.textSecondary,
-    fontSize: 14,
-    fontFamily: Fonts?.sans,
+  selectorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1D22',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.round,
+    gap: 4,
+  },
+  selectorChipText: {
+    color: Colors.dark.text,
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   streakContainer: {
     flexDirection: 'row',
@@ -331,8 +451,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modeIcon: {
-    fontSize: 28,
     marginRight: Spacing.three,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modeInfo: {
     flex: 1,
@@ -346,5 +467,83 @@ const styles = StyleSheet.create({
   modeSubtitle: {
     color: Colors.dark.textSecondary,
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#16171B',
+    borderTopLeftRadius: BORDER_RADIUS.xl,
+    borderTopRightRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.four,
+  },
+  modalTitle: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalCloseText: {
+    color: Colors.dark.textSecondary,
+    fontSize: 16,
+  },
+  modalList: {
+    marginBottom: Spacing.four,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.three,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2E3135',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#555861',
+    marginRight: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {
+    borderColor: Colors.dark.primaryOrange,
+  },
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: Colors.dark.primaryOrange,
+  },
+  modalRowTitle: {
+    color: Colors.dark.text,
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  modalRowSub: {
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+  },
+  confirmButton: {
+    backgroundColor: Colors.dark.primaryOrange,
+    paddingVertical: 16,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+    marginTop: Spacing.two,
+  },
+  confirmButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });

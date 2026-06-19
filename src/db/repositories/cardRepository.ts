@@ -1,7 +1,17 @@
 import { db } from '../schema';
-import { Card, createNewCard } from '../../services/fsrs';
+import { Card, createNewCard, processAnswer, Rating } from '../../services/fsrs';
 import { VocabItem } from '../../hooks/useReviewSession';
 import { fetchVocabByIds, fetchVocabDetail, ApiVocab } from '../../api/contentApi';
+import { getSelectedDecks } from './selectedDecksRepository';
+
+// 範圍解析：明確單一 deckId → 只那包；否則用使用者選的範圍（可多選；空 = 全部）。
+const resolveScope = (deckId?: string): string[] => (deckId ? [deckId] : getSelectedDecks());
+
+// 由範圍產生 IN 子句（空 = 不過濾）。col 例：'c.deck_id'（getDueCards）或 'deck_id'（getDailyMetrics）。
+const deckInClause = (scope: string[], col: string): { inClause: string; params: string[] } => {
+  if (scope.length === 0) return { inClause: '', params: [] };
+  return { inClause: `${col} IN (${scope.map(() => '?').join(', ')})`, params: scope };
+};
 
 // 本機 cards 的一列 → FSRS Card。
 const cardRowToFsrs = (row: any): Card =>
@@ -38,8 +48,10 @@ export const DAILY_NEW_LIMIT = 20;
 // 且首評不是 Easy(=4) 才算（按「簡単/我已經會」只是分流掉，不佔當日新卡額度）。
 const RATING_EASY = 4;
 const countNewIntroducedToday = (deckId?: string): number => {
-  const deckJoin = deckId ? 'JOIN cards c ON c.id = r.card_id' : '';
-  const deckWhere = deckId ? 'WHERE c.deck_id = ?' : '';
+  const scope = resolveScope(deckId);
+  const { inClause, params } = deckInClause(scope, 'c.deck_id');
+  const deckJoin = scope.length ? 'JOIN cards c ON c.id = r.card_id' : '';
+  const deckWhere = inClause ? `WHERE ${inClause}` : '';
   const row = db.executeSync(
     `SELECT COUNT(*) AS c FROM (
        SELECT r.rating, r.review_time,
@@ -49,27 +61,37 @@ const countNewIntroducedToday = (deckId?: string): number => {
      WHERE t.rn = 1
        AND date(t.review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')
        AND t.rating <> ${RATING_EASY}`,
-    deckId ? [deckId] : [],
+    params,
   ).rows?.[0] as { c?: number } | undefined;
   return row?.c ?? 0;
 };
 
 export const getDailyMetrics = (deckId?: string) => {
   const now = Date.now();
-  const deckClause = deckId ? 'AND deck_id = ?' : '';
-  const withDeck = (params: any[]) => (deckId ? [...params, deckId] : params);
+  const scope = resolveScope(deckId);
+  const { inClause, params: deckParams } = deckInClause(scope, 'deck_id');
+  const deckClause = inClause ? `AND ${inClause}` : '';
 
   const availableNew =
-    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE state = 0 AND suspended = 0 ${deckClause}`, withDeck([])).rows[0] as any)?.c || 0;
+    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE state = 0 AND suspended = 0 ${deckClause}`, deckParams).rows[0] as any)?.c || 0;
   // 新規 = 今日尚可引入的新卡（每日上限 − 今日已引入），且不超過實際可用數。
   const newCards = Math.min(availableNew, Math.max(0, DAILY_NEW_LIMIT - countNewIntroducedToday(deckId)));
   const learningCards =
-    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE (state = 1 OR state = 3) AND suspended = 0 AND due <= ? ${deckClause}`, withDeck([now])).rows[0] as any)?.c || 0;
+    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE (state = 1 OR state = 3) AND suspended = 0 AND due <= ? ${deckClause}`, [now, ...deckParams]).rows[0] as any)?.c || 0;
   const reviewCards =
-    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE state = 2 AND suspended = 0 AND due <= ? ${deckClause}`, withDeck([now])).rows[0] as any)?.c || 0;
+    (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE state = 2 AND suspended = 0 AND due <= ? ${deckClause}`, [now, ...deckParams]).rows[0] as any)?.c || 0;
 
   return { newCards, learningCards, reviewCards };
 };
+
+/**
+ * 今日新卡學習進度（給略讀頁計數）：learned = 今日真正開始學的新卡數
+ * （首評 Easy 的「已會」不計入），limit = 每日上限。按範圍（getSelectedDecks）計。
+ */
+export const getDailyNewProgress = (deckId?: string): { learned: number; limit: number } => ({
+  learned: countNewIntroducedToday(deckId),
+  limit: DAILY_NEW_LIMIT,
+});
 
 // 字典模式：向雲端取單字 + 例句 + 構成漢字。FSRS 用空卡（字典查詢不影響排程）。
 export const getVocabById = async (vocabId: string): Promise<VocabItem | null> => {
@@ -103,12 +125,14 @@ export const getDueCards = async (
   deckId?: string,
 ): Promise<VocabItem[]> => {
   const now = Date.now();
-  const deckClause = deckId ? 'AND c.deck_id = ?' : '';
+  const scope = resolveScope(deckId);
+  const { inClause, params: deckParams } = deckInClause(scope, 'c.deck_id');
+  const deckClause = inClause ? `AND ${inClause}` : '';
 
   // 1. 複習/學習中卡（state > 0 且到期）— 純本機，依到期排序。
   const reviewRows = (db.executeSync(
     `SELECT c.* FROM cards c WHERE c.state > 0 AND c.suspended = 0 AND c.due <= ? ${deckClause} ORDER BY c.due ASC LIMIT ?`,
-    deckId ? [now, deckId, reviewLimit] : [now, reviewLimit],
+    [now, ...deckParams, reviewLimit],
   ).rows ?? []) as any[];
 
   // 2. 新卡（state = 0）— 依引入順序；扣掉今日已引入數，套用每日新卡上限。
@@ -118,7 +142,7 @@ export const getDueCards = async (
       ? ((db.executeSync(
           `SELECT c.* FROM cards c
            WHERE c.state = 0 AND c.suspended = 0 ${deckClause} ORDER BY c.intro_rank IS NULL, c.intro_rank ASC LIMIT ?`,
-          deckId ? [deckId, remainingNew] : [remainingNew],
+          [...deckParams, remainingNew],
         ).rows ?? []) as any[])
       : [];
 
@@ -142,6 +166,46 @@ export const getDueCards = async (
     if (vocab) items.push(toVocabItemFromApi(vocab, cardRowToFsrs(row)));
   }
   return items;
+};
+
+/**
+ * 略讀佇列：新卡（state=0、未隱藏）依引入順序，向雲端抓內容。
+ * 不套用每日新卡上限（略讀是 triage：你可一次掃很多張，已會的用 Easy 篩掉不佔額度）。
+ */
+export const getSkimQueue = async (limit: number = 20, deckId?: string): Promise<VocabItem[]> => {
+  const scope = resolveScope(deckId);
+  const { inClause, params: deckParams } = deckInClause(scope, 'c.deck_id');
+  const deckClause = inClause ? `AND ${inClause}` : '';
+  const rows = (db.executeSync(
+    `SELECT c.* FROM cards c
+     WHERE c.state = 0 AND c.suspended = 0 ${deckClause}
+     ORDER BY c.intro_rank IS NULL, c.intro_rank ASC LIMIT ?`,
+    [...deckParams, limit],
+  ).rows ?? []) as any[];
+  if (rows.length === 0) return [];
+
+  const vocabById = new Map<string, ApiVocab>();
+  for (const vocab of await fetchVocabByIds(rows.map((row) => row.vocab_id))) {
+    vocabById.set(vocab.id, vocab);
+  }
+  const items: VocabItem[] = [];
+  for (const row of rows) {
+    const vocab = vocabById.get(row.vocab_id);
+    if (vocab) items.push(toVocabItemFromApi(vocab, cardRowToFsrs(row)));
+  }
+  return items;
+};
+
+/** 略讀「知ってる」：評 Easy 畢業（首評 Easy → 不佔當日新卡額度）。 */
+export const skimMarkKnown = (item: VocabItem): void => {
+  const log = processAnswer(item.fsrsCard, Rating.Easy);
+  updateCardState(item.id, log.card, Rating.Easy, 0);
+};
+
+/** 略讀「学習」：評 Good 進入 SRS 學習（首評非 Easy → 佔當日額度，之後在閃卡複習）。 */
+export const skimMarkLearning = (item: VocabItem): void => {
+  const log = processAnswer(item.fsrsCard, Rating.Good);
+  updateCardState(item.id, log.card, Rating.Good, 0);
 };
 
 export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number, durationMs: number = 0) => {
@@ -190,7 +254,8 @@ export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number,
 export const getStudyTimeStats = (): { todayMs: number; avgPerCardMs: number; todayReviews: number } => {
   const todayRow = db.executeSync(
     `SELECT COALESCE(SUM(duration_ms), 0) AS ms, COUNT(*) AS n FROM revlog
-     WHERE date(review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')`,
+     WHERE date(review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')
+       AND NOT (state = 0 AND rating = 4)`,
   ).rows[0] as any;
   const avgRow = db.executeSync(
     `SELECT AVG(duration_ms) AS ms FROM revlog WHERE duration_ms > 0`,
@@ -206,7 +271,8 @@ export const getStudyTimeStats = (): { todayMs: number; avgPerCardMs: number; to
 export const getReviewedTodayCount = (): number => {
   const row = db.executeSync(
     `SELECT COUNT(DISTINCT card_id) AS c FROM revlog
-     WHERE date(review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')`,
+     WHERE date(review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')
+       AND NOT (state = 0 AND rating = 4)`,
   ).rows[0] as any;
   return row?.c || 0;
 };
