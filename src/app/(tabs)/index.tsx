@@ -120,7 +120,7 @@ export default function Home() {
   };
 
   const hasSelection = activeSelectedIds.length > 0;
-  let selectorText = "全部";
+  let selectorText = "すべて";
   
   if (hasSelection) {
     const names = activeSelectedIds.map(id => {
@@ -230,7 +230,7 @@ export default function Home() {
 
         {/* Modes Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>學習模式</Text>
+          <Text style={styles.sectionTitle}>学習モード</Text>
         </View>
 
         {/* Modes List */}
@@ -240,8 +240,8 @@ export default function Home() {
               <BookOpen size={28} color={Colors.dark.primaryOrange} />
             </View>
             <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>略讀</Text>
-              <Text style={styles.modeSubtitle}>快速瀏覽詞彙</Text>
+              <Text style={styles.modeTitle}>スキミング</Text>
+              <Text style={styles.modeSubtitle}>単語をすばやく閲覧</Text>
             </View>
           </TouchableOpacity>
 
@@ -250,8 +250,8 @@ export default function Home() {
               <Layers size={28} color={Colors.dark.primaryOrange} />
             </View>
             <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>閃卡</Text>
-              <Text style={styles.modeSubtitle}>常規記憶訓練</Text>
+              <Text style={styles.modeTitle}>フラッシュカード</Text>
+              <Text style={styles.modeSubtitle}>通常の記憶トレーニング</Text>
             </View>
           </TouchableOpacity>
 
@@ -264,12 +264,12 @@ export default function Home() {
             </View>
             <View style={styles.modeInfo}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <Text style={styles.modeTitle}>小考</Text>
+                <Text style={styles.modeTitle}>小テスト</Text>
                 <View style={{ backgroundColor: '#2E3135', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                   <Text style={{ color: Colors.dark.textSecondary, fontSize: 10, fontWeight: 'bold' }}>Coming soon</Text>
                 </View>
               </View>
-              <Text style={styles.modeSubtitle}>驗證學習成果</Text>
+              <Text style={styles.modeSubtitle}>学習成果の確認</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -281,9 +281,9 @@ export default function Home() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>學習範圍</Text>
+              <Text style={styles.modalTitle}>学習範囲</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: Spacing.one }}>
-                <Text style={styles.modalCloseText}>取消</Text>
+                <Text style={styles.modalCloseText}>キャンセル</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
@@ -295,7 +295,7 @@ export default function Home() {
                 <View style={[styles.checkbox, tempSelectedIds.length === 0 && styles.checkboxActive]}>
                   {tempSelectedIds.length === 0 && <View style={styles.checkboxInner} />}
                 </View>
-                <Text style={styles.modalRowTitle}>全部</Text>
+                <Text style={styles.modalRowTitle}>すべて</Text>
               </TouchableOpacity>
               
               {availableDecks.map(deck => {
