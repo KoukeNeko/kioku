@@ -8,12 +8,14 @@ import { AppBar } from '../../components/ui/AppBar';
 import { BackButton } from '../../components/ui/BackButton';
 import { getDailyMetrics } from '../../db/repositories/cardRepository';
 import { getAllDecksWithMetrics, Deck } from '../../db/repositories/deckRepository';
+import { ensureSelectedDeckCards } from '../../db/seed';
 
 export default function DeckDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
   const [deck, setDeck] = useState<Deck | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,8 +44,34 @@ export default function DeckDetailScreen() {
     );
   }
 
+  const isUnsubscribed = deck.metrics.totalCards === 0;
   const displayDue = Math.min(deck.metrics.newCards, 20) + deck.metrics.learningCards + deck.metrics.reviewCards;
-  const isCompleted = displayDue === 0;
+  const isCompleted = !isUnsubscribed && displayDue === 0;
+
+  const handlePress = async () => {
+    if (isUnsubscribed) {
+      try {
+        setLoading(true);
+        await ensureSelectedDeckCards([deck.id]);
+        const decks = await getAllDecksWithMetrics();
+        const found = decks.find((d) => d.id === deck.id);
+        if (found) setDeck(found);
+      } catch (e) {
+        console.error('Failed to add deck', e);
+      } finally {
+        setLoading(false);
+      }
+    } else if (!isCompleted) {
+      router.push({ pathname: "/review", params: { deckId: deck.id } });
+    }
+  };
+
+  const getButtonText = () => {
+    if (loading) return 'カードを準備中…';
+    if (isUnsubscribed) return 'この語彙を学習に追加';
+    if (isCompleted) return '今日の目標達成！ 🎉';
+    return 'このデッキを復習する';
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -71,6 +99,9 @@ export default function DeckDetailScreen() {
           )}
           <Text style={styles.title}>{deck.name}</Text>
           <Text style={styles.description}>{deck.description}</Text>
+          <Text style={styles.totalCount}>
+            総単語数 {deck.count ? deck.count.toLocaleString() : 0}
+          </Text>
         </View>
 
         <View style={styles.statsCard}>
@@ -96,16 +127,13 @@ export default function DeckDetailScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.mainButton, isCompleted && { backgroundColor: '#2E3135' }]}
-          onPress={() => {
-            if (!isCompleted) {
-              router.push({ pathname: "/review", params: { deckId: deck.id } });
-            }
-          }}
-          activeOpacity={isCompleted ? 1 : 0.7}
+          style={[styles.mainButton, (isCompleted || loading) && { backgroundColor: '#2E3135' }]}
+          onPress={handlePress}
+          disabled={isCompleted || loading}
+          activeOpacity={0.7}
         >
-          <Text style={[styles.mainButtonText, isCompleted && { color: '#8E8F94' }]}>
-            {isCompleted ? '今日の目標達成！ 🎉' : 'このデッキを復習する'}
+          <Text style={[styles.mainButtonText, (isCompleted || loading) && { color: '#8E8F94' }]}>
+            {getButtonText()}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -127,7 +155,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
   },
   content: {
-    paddingTop: 24,
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.six,
@@ -158,6 +185,13 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     textAlign: 'center',
     marginTop: Spacing.one,
+  },
+  totalCount: {
+    fontSize: 14,
+    color: Colors.dark.textSecondary,
+    textAlign: 'center',
+    marginTop: Spacing.two,
+    fontWeight: 'bold',
   },
   statsCard: {
     backgroundColor: '#121316',

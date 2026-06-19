@@ -7,6 +7,8 @@ export interface Deck {
   description: string | null;
   tags: string[];
   color: string | null;
+  /** 伺服器牌組目錄的總詞數（與本機是否已建卡無關）。未訂閱的頻率包用它顯示規模，而非本機 0。 */
+  count: number;
   metrics: {
     totalCards: number;
     newCards: number;
@@ -50,6 +52,7 @@ export const getAllDecksWithMetrics = async (): Promise<Deck[]> => {
       description: deck.description,
       tags: deck.tags,
       color: deck.color,
+      count: deck.count,
       metrics: {
         totalCards: metric?.totalCards || 0,
         newCards,
