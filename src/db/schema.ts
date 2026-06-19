@@ -61,9 +61,16 @@ export const initDB = () => {
         elapsed_days INTEGER,
         last_elapsed_days INTEGER,
         scheduled_days INTEGER,
-        review_time INTEGER NOT NULL
+        review_time INTEGER NOT NULL,
+        duration_ms INTEGER
       );
     `);
+
+    // 舊版 revlog 無 duration_ms（每次複習耗時）則補上。
+    const revlogCols = (db.executeSync('PRAGMA table_info(revlog)').rows ?? []) as any[];
+    if (!revlogCols.some((col) => col.name === 'duration_ms')) {
+      db.executeSync('ALTER TABLE revlog ADD COLUMN duration_ms INTEGER');
+    }
 
     // 小型 key/value（存放本機訓練出的 FSRS 參數 w 等）。
     db.executeSync(`

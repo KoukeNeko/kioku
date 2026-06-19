@@ -3,6 +3,9 @@ import { Card, Rating, processAnswer, formatInterval, previewSchedule } from '..
 import { getDueCards, updateCardState } from '../db/repositories/cardRepository';
 import { fetchVocabDetail } from '../api/contentApi';
 
+// 單卡計時上限：避免使用者掛在某張卡（AFK）灌爆平均學習時間。
+const MAX_REVIEW_DURATION_MS = 60_000;
+
 export interface FuriganaChunk {
   ruby: string;
   rt?: string;
@@ -44,6 +47,7 @@ export const useReviewSession = (deckId?: string, enabled: boolean = true) => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false); // 雲端內容載入失敗（離線/伺服器掛掉）
   const detailLoadedRef = useRef<Set<string>>(new Set());
+  const cardShownAtRef = useRef<number>(Date.now()); // 目前卡片開始顯示的時刻（計時用）
 
   // 載入卡片：本機挑卡 + 雲端批次抓內容（async）。字典模式（enabled=false）不需挑卡。
   useEffect(() => {
@@ -110,6 +114,11 @@ export const useReviewSession = (deckId?: string, enabled: boolean = true) => {
     };
   }, [currentItem]);
 
+  // 每換一張卡（依 id）重設計時起點，供 handleRate 計算作答耗時。
+  useEffect(() => {
+    cardShownAtRef.current = Date.now();
+  }, [currentItem?.id]);
+
   const upcomingIntervals = useMemo(() => {
     if (!currentItem) return null;
     
@@ -131,9 +140,12 @@ export const useReviewSession = (deckId?: string, enabled: boolean = true) => {
     const recordLog = processAnswer(currentItem.fsrsCard, rating, now);
     const newFsrsCard = recordLog.card;
 
-    // Persist to SQLite (+ revlog with the rating)
+    // 作答耗時（翻卡→評分），上限保護後存入 revlog。
+    const durationMs = Math.min(Date.now() - cardShownAtRef.current, MAX_REVIEW_DURATION_MS);
+
+    // Persist to SQLite (+ revlog with the rating + duration)
     try {
-      updateCardState(currentItem.id, newFsrsCard, rating);
+      updateCardState(currentItem.id, newFsrsCard, rating, durationMs);
     } catch (e) {
       console.error('Failed to update card state in DB:', e);
     }

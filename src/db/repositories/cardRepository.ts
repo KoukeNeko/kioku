@@ -31,13 +31,34 @@ const toVocabItemFromApi = (vocab: ApiVocab, fsrsCard: Card): VocabItem => ({
   fsrsCard,
 });
 
+/** 每日新卡上限：當天引入滿這麼多張後，不再給新卡（避免無限批次、進度才會「停得住」）。 */
+export const DAILY_NEW_LIMIT = 20;
+
+// 今天引入的新卡數 = revlog 中每張卡「最早一筆複習」落在今天的卡片數。
+const countNewIntroducedToday = (deckId?: string): number => {
+  const deckJoin = deckId ? 'JOIN cards c ON c.id = r.card_id' : '';
+  const deckWhere = deckId ? 'WHERE c.deck_id = ?' : '';
+  const row = db.executeSync(
+    `SELECT COUNT(*) AS c FROM (
+       SELECT r.card_id, MIN(r.review_time) AS first_t
+       FROM revlog r ${deckJoin} ${deckWhere}
+       GROUP BY r.card_id
+     ) t
+     WHERE date(t.first_t / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')`,
+    deckId ? [deckId] : [],
+  ).rows?.[0] as { c?: number } | undefined;
+  return row?.c ?? 0;
+};
+
 export const getDailyMetrics = (deckId?: string) => {
   const now = Date.now();
   const deckClause = deckId ? 'AND deck_id = ?' : '';
   const withDeck = (params: any[]) => (deckId ? [...params, deckId] : params);
 
-  const newCards =
+  const availableNew =
     (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE state = 0 ${deckClause}`, withDeck([])).rows[0] as any)?.c || 0;
+  // 新規 = 今日尚可引入的新卡（每日上限 − 今日已引入），且不超過實際可用數。
+  const newCards = Math.min(availableNew, Math.max(0, DAILY_NEW_LIMIT - countNewIntroducedToday(deckId)));
   const learningCards =
     (db.executeSync(`SELECT COUNT(*) AS c FROM cards WHERE (state = 1 OR state = 3) AND due <= ? ${deckClause}`, withDeck([now])).rows[0] as any)?.c || 0;
   const reviewCards =
@@ -86,12 +107,16 @@ export const getDueCards = async (
     deckId ? [now, deckId, reviewLimit] : [now, reviewLimit],
   ).rows ?? []) as any[];
 
-  // 2. 新卡（state = 0）— 依引入順序，intro_rank 於 seed 時自雲端存於本機卡片。
-  const newRows = (db.executeSync(
-    `SELECT c.* FROM cards c
-     WHERE c.state = 0 ${deckClause} ORDER BY c.intro_rank IS NULL, c.intro_rank ASC LIMIT ?`,
-    deckId ? [deckId, newLimit] : [newLimit],
-  ).rows ?? []) as any[];
+  // 2. 新卡（state = 0）— 依引入順序；扣掉今日已引入數，套用每日新卡上限。
+  const remainingNew = Math.max(0, newLimit - countNewIntroducedToday(deckId));
+  const newRows =
+    remainingNew > 0
+      ? ((db.executeSync(
+          `SELECT c.* FROM cards c
+           WHERE c.state = 0 ${deckClause} ORDER BY c.intro_rank IS NULL, c.intro_rank ASC LIMIT ?`,
+          deckId ? [deckId, remainingNew] : [remainingNew],
+        ).rows ?? []) as any[])
+      : [];
 
   const orderedRows = [...reviewRows, ...newRows];
   if (orderedRows.length === 0) return [];
@@ -115,7 +140,7 @@ export const getDueCards = async (
   return items;
 };
 
-export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number) => {
+export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number, durationMs: number = 0) => {
   db.executeSync(
     `UPDATE cards SET
       due = ?, stability = ?, difficulty = ?, elapsed_days = ?, scheduled_days = ?,
@@ -135,10 +160,10 @@ export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number)
     ],
   );
 
-  // 記錄複習 log（FSRS 個人化訓練原料）。
+  // 記錄複習 log（FSRS 個人化訓練原料 + duration_ms 供學習時間分析）。
   db.executeSync(
-    `INSERT INTO revlog (card_id, rating, state, due, stability, difficulty, elapsed_days, scheduled_days, review_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO revlog (card_id, rating, state, due, stability, difficulty, elapsed_days, scheduled_days, review_time, duration_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       `card-${vocabId}`,
       rating,
@@ -149,8 +174,28 @@ export const updateCardState = (vocabId: string, fsrsCard: Card, rating: number)
       fsrsCard.elapsed_days,
       fsrsCard.scheduled_days,
       Date.now(),
+      durationMs,
     ],
   );
+};
+
+/**
+ * 學習時間統計（給分析/統計頁）：今日總時長、整體每張平均、今日複習筆數。
+ * duration_ms 由 updateCardState 寫入（翻卡→評分的耗時，已於來源端設上限）。
+ */
+export const getStudyTimeStats = (): { todayMs: number; avgPerCardMs: number; todayReviews: number } => {
+  const todayRow = db.executeSync(
+    `SELECT COALESCE(SUM(duration_ms), 0) AS ms, COUNT(*) AS n FROM revlog
+     WHERE date(review_time / 1000, 'unixepoch', 'localtime') = date('now', 'localtime')`,
+  ).rows[0] as any;
+  const avgRow = db.executeSync(
+    `SELECT AVG(duration_ms) AS ms FROM revlog WHERE duration_ms > 0`,
+  ).rows[0] as any;
+  return {
+    todayMs: todayRow?.ms ?? 0,
+    avgPerCardMs: Math.round(avgRow?.ms ?? 0),
+    todayReviews: todayRow?.n ?? 0,
+  };
 };
 
 // 今天複習過的不重複卡片數（用於首頁進度環）。
