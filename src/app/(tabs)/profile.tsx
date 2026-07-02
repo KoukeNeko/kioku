@@ -6,7 +6,6 @@ import { AppBar } from "../../components/ui/AppBar";
 import { SettingsCard, SettingsRow, SettingsDivider } from "../../components/ui/SettingsCard";
 import { Settings, Check, History, Bookmark, EyeOff, AlertTriangle, Frown } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { LinearGradient } from 'expo-linear-gradient';
 import { getCollectionCounts } from "../../db/repositories/collectionsRepository";
 
 export default function Profile() {
@@ -149,26 +148,6 @@ export default function Profile() {
             onPress={() => router.push('/collection/difficult')}
           />
         </SettingsCard>
-
-        {/* Upgrade Card */}
-        <TouchableOpacity>
-          <LinearGradient
-            colors={['rgba(255, 90, 54, 0.15)', '#16171B']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.upgradeCard}
-          >
-            <View style={styles.upgradeCardInner}>
-              <View style={styles.upgradeInfo}>
-                <Text style={styles.upgradeTitle}>Kioku Pro</Text>
-                <Text style={styles.upgradeSub}>無制限のデッキ・ピッチ音声・統計</Text>
-              </View>
-              <View style={styles.upgradeButton}>
-                <Text style={styles.upgradeButtonText}>アップグレード</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -332,42 +311,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: Spacing.three,
     marginLeft: Spacing.one,
-  },
-  upgradeCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#2E3135',
-  },
-  upgradeCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.three,
-  },
-  upgradeInfo: {
-    flex: 1,
-    paddingRight: Spacing.three,
-  },
-  upgradeTitle: {
-    color: Colors.dark.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: Spacing.one,
-  },
-  upgradeSub: {
-    color: Colors.dark.textSecondary,
-    fontSize: 12,
-  },
-  upgradeButton: {
-    backgroundColor: Colors.dark.primaryOrange,
-    paddingHorizontal: Spacing.three,
-    paddingVertical: 10,
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  upgradeButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 14,
   }
 });
