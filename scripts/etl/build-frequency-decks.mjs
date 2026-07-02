@@ -20,8 +20,8 @@ import { DatabaseSync } from 'node:sqlite';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = join(SCRIPT_DIR, '..', '..');
-// 內容庫隨伺服器（repo/server/data）；比照 build-content-db.mjs 的 APP_ROOT 解法走絕對路徑。
-const CONTENT_DB_PATH = join(APP_ROOT, '..', '..', 'server', 'data', 'kioku-content.db');
+// 內容庫隨 App 打包於資產目錄；比照 build-content-db.mjs 的 OUTPUT_DIR。
+const CONTENT_DB_PATH = join(APP_ROOT, 'assets', 'db', 'kioku-content.db');
 
 // JLPT 牌組接在 sort_order 0..4，freq 牌組續接 5..8。
 const FREQ_DECK_SORT_BASE = 5;

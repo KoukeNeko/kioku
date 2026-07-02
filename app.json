@@ -10,7 +10,6 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "dev.koukeneko.nekogo",
-      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -41,10 +40,7 @@
           }
         }
       ],
-      "expo-asset",
-      "expo-secure-store",
-      "expo-apple-authentication",
-      "@react-native-google-signin/google-signin"
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

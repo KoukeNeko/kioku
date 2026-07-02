@@ -5,10 +5,11 @@ export const db = open({
 });
 
 /**
- * 初始化「可寫主庫」的資料表（cards / revlog）。詞彙內容（vocab/kanji/example/牌組）
- * 全部改由雲端伺服器供應（見 src/api/contentApi.ts），本機不再內建或 ATTACH 內容庫。
+ * 初始化「可寫主庫」的資料表（cards / revlog / kv）。詞彙內容（vocab/kanji/example/牌組）
+ * 由打包進 App 的唯讀內容庫供應，以別名 content ATTACH 於本連線（見 src/db/contentDb.ts）；
+ * 主庫只存使用者的 FSRS 狀態與複習紀錄，與內容分離。
  *
- * cards 參照雲端 vocab 的 id，並存 intro_rank（新卡引入順序，seed 時自雲端取得）。
+ * cards 參照 content.vocab 的 id，並存 intro_rank（新卡引入順序，seed 時自 content.deck_vocab 取得）。
  * 舊版 cards 以 note_id 參照 notes，偵測到即丟棄重建（dev 階段拋棄舊複習進度可接受），
  * 並移除 notes 表與舊的本機 decks 表。
  */

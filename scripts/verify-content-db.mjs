@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(SCRIPT_DIR, '..', '..', '..', 'server', 'data', 'kioku-content.db');
+const DB_PATH = join(SCRIPT_DIR, '..', 'assets', 'db', 'kioku-content.db');
 
 const MIN_VOCAB = 20000;
 const MIN_KANJI = 2000;

@@ -4,15 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
 import { AppBar } from "../../components/ui/AppBar";
 import { SettingsCard, SettingsRow, SettingsDivider } from "../../components/ui/SettingsCard";
-import { Settings, ChevronRight, Check, History, Bookmark, EyeOff, AlertTriangle, Frown } from "lucide-react-native";
+import { Settings, Check, History, Bookmark, EyeOff, AlertTriangle, Frown } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { LinearGradient } from 'expo-linear-gradient';
 import { getCollectionCounts } from "../../db/repositories/collectionsRepository";
-import { useAuth } from '../../context/AuthContext';
 
 export default function Profile() {
   const router = useRouter();
-  const { status, user, signOut } = useAuth();
   const [counts, setCounts] = useState({ history: 0, bookmark: 0, suspended: 0, leech: 0, difficult: 0 });
 
   useFocusEffect(
@@ -37,81 +35,37 @@ export default function Profile() {
       />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Profile Card */}
-        {status === 'loading' ? (
-          <View style={[styles.profileCard, { opacity: 0.5, height: 160 }]} />
-        ) : status === 'guest' ? (
-          <TouchableOpacity style={styles.profileCard} onPress={() => router.push('/login')}>
-            <View style={styles.profileTop}>
-              <View style={styles.profileInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>ゲ</Text>
-                </View>
-                <View>
-                  <Text style={styles.nameText}>ゲスト</Text>
-                  <Text style={styles.subText}>ログインしてデータを同期</Text>
-                </View>
+        {/* Profile Card（ローカル：ログイン無し、すべて端末内に保存） */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileTop}>
+            <View style={styles.profileInfo}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>ね</Text>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={{ color: Colors.dark.primaryOrange, fontSize: 13, fontWeight: 'bold' }}>ログイン</Text>
-                <ChevronRight size={16} color={Colors.dark.primaryOrange} />
-              </View>
-            </View>
-
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.primaryOrange }]}>12</Text>
-                <Text style={styles.statLabel}>連続日数</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.text }]}>8,420</Text>
-                <Text style={styles.statLabel}>総復習数</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.text }]}>47</Text>
-                <Text style={styles.statLabel}>学習日数</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.profileCard}>
-            <View style={styles.profileTop}>
-              <View style={styles.profileInfo}>
-                <View style={[styles.avatar, { backgroundColor: Colors.dark.primaryOrange }]}>
-                  <Text style={[styles.avatarText, { color: '#000' }]}>
-                    {(user?.displayName || user?.email || 'ユ')[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.nameText}>{user?.displayName ?? user?.email ?? 'ログイン済み'}</Text>
-                  <Text style={styles.subText}>JLPT N3 を目標・30分／日</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={async () => await signOut()} style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#2E3135', borderRadius: 12 }}>
-                <Text style={{ color: Colors.dark.text, fontSize: 12, fontWeight: 'bold' }}>ログアウト</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.primaryOrange }]}>12</Text>
-                <Text style={styles.statLabel}>連続日数</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.text }]}>8,420</Text>
-                <Text style={styles.statLabel}>総復習数</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: Colors.dark.text }]}>47</Text>
-                <Text style={styles.statLabel}>学習日数</Text>
+              <View>
+                <Text style={styles.nameText}>ローカルユーザー</Text>
+                <Text style={styles.subText}>すべてこの端末に保存</Text>
               </View>
             </View>
           </View>
-        )}
+
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.dark.primaryOrange }]}>12</Text>
+              <Text style={styles.statLabel}>連続日数</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.dark.text }]}>8,420</Text>
+              <Text style={styles.statLabel}>総復習数</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.dark.text }]}>47</Text>
+              <Text style={styles.statLabel}>学習日数</Text>
+            </View>
+          </View>
+        </View>
 
         {/* This Week's Goal Card */}
         <View style={styles.goalCard}>
