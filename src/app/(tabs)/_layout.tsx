@@ -22,13 +22,7 @@ const POP_WIND_UP_MS = 70;
 const PRESS_SQUISH_SCALE = 0.9;
 // 藥丸底色：品牌橘的低透明 tonal（對應 M3 secondaryContainer 角色）。
 const PILL_COLOR = 'rgba(255, 107, 53, 0.22)';
-// Spotify 式 nav bar 垂直漸層：上緣近全透（看得到內容）→ 下緣近實色（背景色 #0B0C10）。
-const NAV_GRADIENT_COLORS = [
-  'rgba(11, 12, 16, 0.02)',
-  'rgba(11, 12, 16, 0.78)',
-  'rgba(11, 12, 16, 0.99)',
-] as const;
-const NAV_GRADIENT_LOCATIONS = [0, 0.45, 1] as const;
+
 
 /**
  * Material 3 Expressive 的分頁圖示：聚焦時藥丸展開 + icon 縮放彈跳（squash & stretch pop）。
@@ -148,8 +142,8 @@ export default function TabLayout() {
         tabBarBackground: Platform.OS === 'android'
           ? () => (
               <LinearGradient
-                colors={NAV_GRADIENT_COLORS}
-                locations={NAV_GRADIENT_LOCATIONS}
+                colors={['rgba(11, 12, 16, 0.02)', 'rgba(11, 12, 16, 0.78)', 'rgba(11, 12, 16, 0.99)']}
+                locations={[0, 0.45, 1]}
                 style={StyleSheet.absoluteFill}
               />
             )

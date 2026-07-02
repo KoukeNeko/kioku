@@ -11,6 +11,8 @@ import { attachContentDb } from '../db/contentDb';
 import { ensureSelectedDeckCards } from '../db/seed';
 import { applyStoredParameters } from '../services/fsrs';
 import * as FsrsNative from '../../modules/fsrs-native'; // Slice 0 工具鏈探針（暫時）
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -79,21 +81,25 @@ export default function RootLayout() {
   }
 
   return (
-    <SettingsProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          // 防露底兩件套：場景底 + window 底（見 SystemUI.setBackgroundColorAsync）都釘深色，
-          // 換頁過場的縫隙才不會閃出亮色。
-          contentStyle: { backgroundColor: '#0B0C10' },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="review" />
-        <Stack.Screen name="licenses" />
-        <Stack.Screen name="open-source" />
-        <Stack.Screen name="contributors" />
-      </Stack>
-    </SettingsProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <SettingsProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              // 防露底兩件套：場景底 + window 底（見 SystemUI.setBackgroundColorAsync）都釘深色，
+              // 換頁過場的縫隙才不會閃出亮色。
+              contentStyle: { backgroundColor: '#0B0C10' },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="review" />
+            <Stack.Screen name="licenses" />
+            <Stack.Screen name="open-source" />
+            <Stack.Screen name="contributors" />
+          </Stack>
+        </SettingsProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }

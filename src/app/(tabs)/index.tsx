@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
@@ -10,7 +10,7 @@ import { getSelectedDecks, setSelectedDecks } from '../../db/repositories/select
 import { ensureSelectedDeckCards } from '../../db/seed';
 import { fetchDecks, ApiDeck } from '../../api/contentApi';
 import { AppBar } from "../../components/ui/AppBar";
-import Animated, { SlideInDown } from 'react-native-reanimated';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 const CircularProgress = ({ progress, size, strokeWidth, color, trackColor, children }: any) => {
   const radius = (size - strokeWidth) / 2;
@@ -57,7 +57,9 @@ export default function Home() {
   const [reviewedToday, setReviewedToday] = useState(0);
   const [studyMinutes, setStudyMinutes] = useState(0);
 
-  const [modalVisible, setModalVisible] = useState(false);
+  // Bottom Sheet Ref
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['65%', '90%'], []);
   const [availableDecks, setAvailableDecks] = useState<ApiDeck[]>([]);
   const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
   const [activeSelectedIds, setActiveSelectedIds] = useState<string[]>([]);
@@ -95,7 +97,7 @@ export default function Home() {
 
   const handleOpenModal = () => {
     setTempSelectedIds(getSelectedDecks());
-    setModalVisible(true);
+    bottomSheetModalRef.current?.present();
   };
 
   const handleConfirmSelection = async () => {
@@ -110,7 +112,7 @@ export default function Home() {
       console.error('為新選牌組建卡失敗', e);
     } finally {
       setSeeding(false);
-      setModalVisible(false);
+      bottomSheetModalRef.current?.dismiss();
       loadMetrics();
     }
   };
@@ -280,66 +282,77 @@ export default function Home() {
 
       </ScrollView>
 
-      {/* Range Selector Modal */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-        statusBarTranslucent
-        navigationBarTranslucent
+      {/* Range Selector Bottom Sheet */}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={(props) => (
+          <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} opacity={0.6} />
+        )}
+        backgroundStyle={{ backgroundColor: '#16171B' }}
+        handleIndicatorStyle={{ backgroundColor: '#555861' }}
       >
-        <View style={styles.modalOverlay}>
-          <Animated.View entering={SlideInDown.duration(300)} style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>学習範囲</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: Spacing.one }}>
-                <Text style={styles.modalCloseText}>キャンセル</Text>
-              </TouchableOpacity>
+        {/* Header */}
+        <View style={{ paddingHorizontal: Spacing.four, paddingTop: Spacing.two }}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>学習範囲</Text>
+            <TouchableOpacity onPress={() => bottomSheetModalRef.current?.dismiss()} style={{ padding: Spacing.one }}>
+              <Text style={styles.modalCloseText}>キャンセル</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Scrollable List */}
+        <BottomSheetScrollView 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ paddingHorizontal: Spacing.four, paddingBottom: Spacing.four }}
+          showsVerticalScrollIndicator={true}
+        >
+          <TouchableOpacity
+            style={styles.modalRow}
+            onPress={() => setTempSelectedIds([])}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, tempSelectedIds.length === 0 && styles.checkboxActive]}>
+              {tempSelectedIds.length === 0 && <View style={styles.checkboxInner} />}
             </View>
-            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+            <Text style={styles.modalRowTitle}>すべて</Text>
+          </TouchableOpacity>
+
+          {availableDecks.map(deck => {
+            const isSelected = tempSelectedIds.includes(deck.id);
+            return (
               <TouchableOpacity
+                key={deck.id}
                 style={styles.modalRow}
-                onPress={() => setTempSelectedIds([])}
+                onPress={() => handleToggleDeck(deck.id)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.checkbox, tempSelectedIds.length === 0 && styles.checkboxActive]}>
-                  {tempSelectedIds.length === 0 && <View style={styles.checkboxInner} />}
+                <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                  {isSelected && <View style={styles.checkboxInner} />}
                 </View>
-                <Text style={styles.modalRowTitle}>すべて</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalRowTitle}>{deck.name}</Text>
+                  <Text style={styles.modalRowSub}>{deck.count} 枚</Text>
+                </View>
               </TouchableOpacity>
+            );
+          })}
+        </BottomSheetScrollView>
 
-              {availableDecks.map(deck => {
-                const isSelected = tempSelectedIds.includes(deck.id);
-                return (
-                  <TouchableOpacity
-                    key={deck.id}
-                    style={styles.modalRow}
-                    onPress={() => handleToggleDeck(deck.id)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                      {isSelected && <View style={styles.checkboxInner} />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.modalRowTitle}>{deck.name}</Text>
-                      <Text style={styles.modalRowSub}>{deck.count} 枚</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <TouchableOpacity
-              style={[styles.confirmButton, seeding && { opacity: 0.6 }]}
-              onPress={handleConfirmSelection}
-              disabled={seeding}
-              activeOpacity={seeding ? 1 : 0.7}
-            >
-              <Text style={styles.confirmButtonText}>{seeding ? '準備中…' : '確定'}</Text>
-            </TouchableOpacity>
-          </Animated.View>
+        {/* Footer */}
+        <View style={{ paddingHorizontal: Spacing.four, paddingBottom: Math.max(insets.bottom, 24), paddingTop: Spacing.two }}>
+          <TouchableOpacity
+            style={[styles.confirmButton, seeding && { opacity: 0.6 }, { marginTop: 0 }]}
+            onPress={handleConfirmSelection}
+            disabled={seeding}
+            activeOpacity={seeding ? 1 : 0.7}
+          >
+            <Text style={styles.confirmButtonText}>{seeding ? '準備中…' : '確定'}</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }
@@ -509,18 +522,9 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontSize: 14,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
   modalContent: {
-    backgroundColor: '#16171B',
-    borderTopLeftRadius: BORDER_RADIUS.xl,
-    borderTopRightRadius: BORDER_RADIUS.xl,
+    flex: 1,
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
-    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',

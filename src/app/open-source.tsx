@@ -26,6 +26,18 @@ export default function OpenSourceScreen() {
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
                 
                 <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>本專案</Text>
+                    <View style={styles.divider} />
+                    
+                    <Text style={styles.itemName}>Nekogo</Text>
+                    <Text style={styles.licenseText}>MIT License</Text>
+                    <Text style={styles.descriptionText}>
+                        An open-source Japanese learning application. Copyright (c) 2024 KoukeNeko.
+                        {"\n"}GitHub: https://github.com/KoukeNeko/nekogo
+                    </Text>
+                </View>
+
+                <View style={styles.card}>
                     <Text style={styles.sectionTitle}>Core Frameworks</Text>
                     <View style={styles.divider} />
                     
