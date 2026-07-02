@@ -77,7 +77,7 @@ export default function RootLayout() {
 
   return (
     <SettingsProvider>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0B0C10' } }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0B0C10' } }}> {/* to prevent screen flash */}
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="review" />
         <Stack.Screen name="licenses" />
