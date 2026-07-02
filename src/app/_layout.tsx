@@ -13,6 +13,7 @@ import { applyStoredParameters } from '../services/fsrs';
 import * as FsrsNative from '../../modules/fsrs-native'; // Slice 0 工具鏈探針（暫時）
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { CustomSplashScreen } from '../components/ui/CustomSplashScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,6 +21,7 @@ export default function RootLayout() {
   const [dbReady, setDbReady] = useState(false);
   const [seedFailed, setSeedFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [splashVisible, setSplashVisible] = useState(true);
   const [loaded, error] = useFonts({
     'SourceHanSerif-Regular': require('../../assets/fonts/SourceHanSerifJP-Regular.otf'),
     'SourceHanSerif-Bold': require('../../assets/fonts/SourceHanSerifJP-Bold.otf'),
@@ -51,17 +53,23 @@ export default function RootLayout() {
     return () => { cancelled = true; };
   }, [retryKey]);
 
+  const isReady = !!((loaded || error) && dbReady);
+
   useEffect(() => {
-    if ((loaded || error) && dbReady) {
+    // 只要字體載入完畢，我們就可以隱藏系統原生的 Splash Screen，
+    // 把畫面交接給我們的 CustomSplashScreen。
+    if (loaded || error) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error, dbReady]);
+  }, [loaded, error]);
 
-  if ((!loaded && !error) || !dbReady) {
+  // 字體還沒載入前，不要 render 任何東西（保持原生啟動畫面的顯示）
+  if (!loaded && !error) {
     return null;
   }
 
-  if (seedFailed) {
+  // 若需要重試，讓外層不再被 CustomSplashScreen 蓋住
+  if (seedFailed && !splashVisible) {
     return (
       <View style={{ flex: 1, backgroundColor: '#0B0C10', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
         <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' }}>
@@ -98,6 +106,12 @@ export default function RootLayout() {
             <Stack.Screen name="open-source" />
             <Stack.Screen name="contributors" />
           </Stack>
+          {splashVisible && (
+            <CustomSplashScreen 
+              isReady={isReady} 
+              onAnimationComplete={() => setSplashVisible(false)} 
+            />
+          )}
         </SettingsProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
