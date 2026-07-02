@@ -62,7 +62,7 @@ export default function Decks() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={<Text style={styles.headerTitle}>デッキ</Text>}
         rightContent={
           <View style={styles.headerActions}>

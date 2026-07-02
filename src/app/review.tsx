@@ -318,7 +318,7 @@ export default function Review() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={
           isDictionaryMode ? (
             <BackButton />

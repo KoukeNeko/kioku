@@ -218,7 +218,6 @@ const styles = StyleSheet.create({
         fontFamily: Fonts?.serif,
     },
     scrollContent: {
-        paddingTop: 24,
         paddingHorizontal: Spacing.four,
         paddingTop: Spacing.two,
     },

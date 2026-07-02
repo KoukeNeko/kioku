@@ -115,7 +115,7 @@ export default function SkimScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={
           <TouchableOpacity onPress={() => router.back()} style={{ padding: Spacing.one }}>
             <X size={24} color={Colors.dark.textSecondary} />

@@ -18,8 +18,11 @@ import { db } from './schema';
  */
 
 export const CONTENT_ALIAS = 'content';
-// 版本化檔名：內容庫改版時 bump（配合 contentApi 的 CONTENT_VERSION），強制下次啟動重新複製，不動使用者主庫 cards/revlog。
-const CONTENT_DB_FILE = 'kioku-content-v4.db';
+// 版本化檔名：內容庫改版或副本需強制重建時 bump，下次啟動會重新複製，不動使用者主庫 cards/revlog。
+// v5：v4 副本曾被未限定的 DROP TABLE 誤刪 content.decks（見 schema.ts 註解），bump 強制換新副本。
+const CONTENT_DB_FILE = 'kioku-content-v5.db';
+// 舊版副本檔名：複製新版時順手清掉，避免 134MB 級的孤兒檔佔用空間。
+const STALE_CONTENT_DB_FILES = ['kioku-content-v4.db'];
 const DEST_URI = `${FileSystem.documentDirectory}${CONTENT_DB_FILE}`;
 const DEST_PATH = DEST_URI.replace('file://', '');
 
@@ -36,16 +39,27 @@ const ensureContentDbCopied = async (): Promise<void> => {
     throw new Error('內容庫資產無 localUri，無法複製');
   }
   await FileSystem.copyAsync({ from: asset.localUri, to: DEST_URI });
+  for (const staleFile of STALE_CONTENT_DB_FILES) {
+    await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${staleFile}`, { idempotent: true });
+  }
   console.log('✅ 內容庫已複製至 documentDirectory');
 };
 
-/** 複製（首次）並把內容庫 ATTACH 到主連線。需在任何 content.* 查詢前 await。 */
+/** 複製（首次）並把內容庫 ATTACH 到主連線。冪等；需在任何 content.* 查詢前 await。 */
 export const attachContentDb = async (): Promise<void> => {
   if (attached) {
     return;
   }
   await ensureContentDbCopied();
-  db.executeSync(`ATTACH DATABASE '${DEST_PATH}' AS ${CONTENT_ALIAS}`);
+  // dev reload 後原生連線可能還留著上一輪的 ATTACH；若指向舊版檔案則先卸掉再重掛。
+  const attachedDbs = (db.executeSync('PRAGMA database_list').rows ?? []) as { name?: string; file?: string }[];
+  const existing = attachedDbs.find((row) => row.name === CONTENT_ALIAS);
+  if (existing && existing.file !== DEST_PATH) {
+    db.executeSync(`DETACH DATABASE ${CONTENT_ALIAS}`);
+  }
+  if (!existing || existing.file !== DEST_PATH) {
+    db.executeSync(`ATTACH DATABASE '${DEST_PATH}' AS ${CONTENT_ALIAS}`);
+  }
   attached = true;
 
   const result = db.executeSync(`SELECT COUNT(*) AS count FROM ${CONTENT_ALIAS}.vocab`);

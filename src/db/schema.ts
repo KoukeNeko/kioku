@@ -16,14 +16,16 @@ export const db = open({
 export const initDB = () => {
   try {
     // --- 由舊 schema 遷移：cards.note_id + notes → cards.vocab_id ---
+    // DROP 一律加 main. 限定詞：SQLite 對未限定的表名會一路搜到 ATTACH 的庫，
+    // dev reload 時 content 已掛載、main 又沒有同名表，曾把 content.decks 誤刪（v4 副本損毀事故）。
     const cardCols = (db.executeSync('PRAGMA table_info(cards)').rows ?? []) as any[];
     if (cardCols.some((col) => col.name === 'note_id')) {
-      db.executeSync('DROP TABLE IF EXISTS cards');
+      db.executeSync('DROP TABLE IF EXISTS main.cards');
       console.log('🔁 遷移：丟棄舊 cards（note_id → vocab_id）');
     }
-    db.executeSync('DROP TABLE IF EXISTS notes');
-    // 牌組目錄改為資料驅動，移到內容庫 content.decks / content.deck_vocab；移除主庫舊的 decks 表。
-    db.executeSync('DROP TABLE IF EXISTS decks');
+    db.executeSync('DROP TABLE IF EXISTS main.notes');
+    // 牌組目錄改為資料驅動（content.decks / content.deck_vocab）；移除主庫舊的 decks 表。
+    db.executeSync('DROP TABLE IF EXISTS main.decks');
 
     db.executeSync(`
       CREATE TABLE IF NOT EXISTS cards (

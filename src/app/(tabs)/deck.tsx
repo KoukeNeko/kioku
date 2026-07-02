@@ -22,7 +22,7 @@ export default function Deck() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={
           <BackButton />
         }

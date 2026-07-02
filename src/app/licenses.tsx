@@ -12,7 +12,7 @@ export default function LicensesScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <AppBar 
+            <AppBar
                 leftContent={
                     <BackButton />
                 }

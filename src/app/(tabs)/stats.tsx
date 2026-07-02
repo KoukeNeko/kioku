@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { AppBar } from "../../components/ui/AppBar";
 import { getStats, Stats as StatsData } from "../../db/repositories/statsRepository";
 import { getStudyTimeStats } from "../../db/repositories/cardRepository";
@@ -47,7 +47,7 @@ export default function Stats() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={
           <Text style={styles.headerTitle}>統計</Text>
         }

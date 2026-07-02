@@ -63,7 +63,7 @@ export default function CollectionScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <AppBar 
+      <AppBar
         leftContent={<BackButton />}
         centerContent={<Text style={styles.headerTitle}>{title}</Text>}
         rightContent={<View style={{ width: 40 }} />}
