@@ -91,6 +91,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="review" />
         <Stack.Screen name="licenses" />
+        <Stack.Screen name="open-source" />
         <Stack.Screen name="contributors" />
       </Stack>
     </SettingsProvider>

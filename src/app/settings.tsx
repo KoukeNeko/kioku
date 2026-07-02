@@ -255,6 +255,12 @@ export default function SettingsScreen() {
           />
           <SettingsDivider />
           <SettingsRow 
+            label="オープンソース (Open Source)" 
+            showChevron 
+            onPress={() => router.push('/open-source')} 
+          />
+          <SettingsDivider />
+          <SettingsRow 
             label="コントリビューター (Contributors)" 
             showChevron 
             onPress={() => router.push('/contributors')} 
