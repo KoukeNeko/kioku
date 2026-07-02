@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 36, // Reduced from 44
     marginBottom: Spacing.two, // Reduced from three
+    gap: Spacing.three,
   },
   leftArea: {
     flexDirection: 'row',
