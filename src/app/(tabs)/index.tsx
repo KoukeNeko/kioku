@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../../constants/theme";
 import { BookOpen, Layers, FileText, ChevronDown } from "lucide-react-native";
@@ -9,6 +9,7 @@ import { getDailyMetrics, getStreak, getReviewedTodayCount, getStudyTimeStats } 
 import { getSelectedDecks, setSelectedDecks } from '../../db/repositories/selectedDecksRepository';
 import { ensureSelectedDeckCards } from '../../db/seed';
 import { fetchDecks, ApiDeck } from '../../api/contentApi';
+import { AppBar } from "../../components/ui/AppBar";
 
 const CircularProgress = ({ progress, size, strokeWidth, color, trackColor, children }: any) => {
   const radius = (size - strokeWidth) / 2;
@@ -142,11 +143,9 @@ export default function Home() {
   const greeting = hour < 11 ? 'おはよう' : hour < 18 ? 'こんにちは' : 'こんばんは';
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 16) }]} showsVerticalScrollIndicator={false}>
-        
-        {/* Header Row */}
-        <View style={styles.headerRow}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <AppBar
+        leftContent={
           <TouchableOpacity 
             style={[styles.selectorChip, hasSelection && styles.selectorChipActive]} 
             onPress={handleOpenModal}
@@ -160,11 +159,15 @@ export default function Home() {
             </Text>
             <ChevronDown size={16} color={hasSelection ? Colors.dark.primaryOrange : Colors.dark.textSecondary} style={{ flexShrink: 0 }} />
           </TouchableOpacity>
+        }
+        rightContent={
           <View style={styles.streakContainer}>
             <Text style={{ fontSize: 14 }}>🔥</Text>
             <Text style={styles.streakText}>{streak}</Text>
           </View>
-        </View>
+        }
+      />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         <Text style={styles.greetingText}>{greeting}</Text>
 
@@ -277,7 +280,12 @@ export default function Home() {
       </ScrollView>
 
       {/* Range Selector Modal */}
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal 
+        visible={modalVisible} 
+        transparent 
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={styles.modalHeader}>
@@ -329,7 +337,7 @@ export default function Home() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -341,12 +349,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: Spacing.three,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.four,
-  },
   selectorChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -357,7 +359,7 @@ const styles = StyleSheet.create({
     gap: 4,
     borderWidth: 1,
     borderColor: 'transparent',
-    maxWidth: '75%',
+    flexShrink: 1,
   },
   selectorChipActive: {
     backgroundColor: 'rgba(255, 107, 53, 0.1)',
