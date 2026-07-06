@@ -56,6 +56,7 @@ export default function Home() {
   const [streak, setStreak] = useState(0);
   const [reviewedToday, setReviewedToday] = useState(0);
   const [studyMinutes, setStudyMinutes] = useState(0);
+  const [metricsLoaded, setMetricsLoaded] = useState(false);
 
   // Bottom Sheet Ref
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -77,6 +78,7 @@ export default function Home() {
       setReviewedToday(getReviewedTodayCount());
       const timeStats = getStudyTimeStats();
       setStudyMinutes(Math.floor(timeStats.todayMs / 60000));
+      setMetricsLoaded(true);
     } catch (e) {
       console.error('Failed to load metrics', e);
     }
@@ -135,6 +137,8 @@ export default function Home() {
   }
 
   const totalDue = metrics.newCards + metrics.learningCards + metrics.reviewCards;
+  // 今日可引入的新卡歸零（達每日上限或已無新卡）→ 速讀今日完了，首頁停用該入口。
+  const skimDone = metricsLoaded && metrics.newCards === 0;
   // 進度環 = 今天已複習 / (已複習 + 尚待複習)。全部完成時為滿。
   const plannedToday = reviewedToday + totalDue;
   const progress = plannedToday === 0 ? 1 : reviewedToday / plannedToday;
@@ -227,15 +231,32 @@ export default function Home() {
 
         {/* Modes List */}
         <View style={styles.modeList}>
-          <TouchableOpacity style={styles.modeCard} onPress={() => router.push('/skim')}>
-            <View style={styles.modeIcon}>
-              <BookOpen size={28} color={Colors.dark.primaryOrange} />
+          {skimDone ? (
+            <View style={[styles.modeCard, { opacity: 0.6 }]}>
+              <View style={styles.modeIcon}>
+                <BookOpen size={28} color={Colors.dark.textSecondary} />
+              </View>
+              <View style={styles.modeInfo}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <Text style={styles.modeTitle}>スキミング</Text>
+                  <View style={{ backgroundColor: '#2E3135', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                    <Text style={{ color: Colors.dark.textSecondary, fontSize: 10, fontWeight: 'bold' }}>今日完了</Text>
+                  </View>
+                </View>
+                <Text style={styles.modeSubtitle}>今日の新規はすべて振り分け済み</Text>
+              </View>
             </View>
-            <View style={styles.modeInfo}>
-              <Text style={styles.modeTitle}>スキミング</Text>
-              <Text style={styles.modeSubtitle}>単語をすばやく閲覧</Text>
-            </View>
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.modeCard} onPress={() => router.push('/skim')}>
+              <View style={styles.modeIcon}>
+                <BookOpen size={28} color={Colors.dark.primaryOrange} />
+              </View>
+              <View style={styles.modeInfo}>
+                <Text style={styles.modeTitle}>スキミング</Text>
+                <Text style={styles.modeSubtitle}>単語をすばやく閲覧</Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.modeCard} onPress={() => router.push('/review')}>
             <View style={styles.modeIcon}>

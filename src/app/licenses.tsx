@@ -34,6 +34,13 @@ export default function LicensesScreen() {
                         description="Copyright 2017-2021 Adobe Systems Incorporated (http://www.adobe.com/), with Reserved Font Name 'Source'." 
                         url="https://github.com/adobe-fonts/source-han-serif" 
                     />
+                    <View style={styles.innerDivider} />
+                    <LibraryItem 
+                        name="LINE Seed TW" 
+                        license="SIL Open Font License 1.1" 
+                        description="Copyright (c) 2025, LY Corporation, with Reserved Font Name 'LINE Seed TW'." 
+                        url="https://seed.line.me/" 
+                    />
                 </View>
 
                 <View style={styles.card}>

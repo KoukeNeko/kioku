@@ -26,6 +26,8 @@ export default function RootLayout() {
     'SourceHanSerif-Regular': require('../../assets/fonts/SourceHanSerifJP-Regular.otf'),
     'SourceHanSerif-Bold': require('../../assets/fonts/SourceHanSerifJP-Bold.otf'),
     'JetBrainsMono-Regular': JetBrainsMono_400Regular,
+    'LINESeed-Regular': require('../../assets/fonts/LINESeedTW_OTF_Rg.otf'),
+    'LINESeed-Bold': require('../../assets/fonts/LINESeedTW_OTF_Bd.otf'),
   });
 
   // 主庫建表 → 掛載打包的唯讀內容庫 → 為「目標牌組」（預設範圍）成員增量建卡（個人 FSRS 紀錄留本機）。

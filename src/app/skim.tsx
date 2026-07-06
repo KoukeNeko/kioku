@@ -122,8 +122,8 @@ export default function SkimScreen() {
           </TouchableOpacity>
         }
         rightContent={
-          <View style={{ width: 60, alignItems: 'flex-end' }}>
-            <Text style={styles.progressText}>{progress.learned} / {progress.limit}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.progressText} numberOfLines={1} adjustsFontSizeToFit>{progress.learned} / {progress.limit}</Text>
           </View>
         }
       />
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   meaningText: {
     color: Colors.dark.text,
     fontSize: 24,
-    fontFamily: Fonts?.serif,
+    fontFamily: Fonts?.lineSeed,
     textAlign: 'center',
     lineHeight: 34,
   },

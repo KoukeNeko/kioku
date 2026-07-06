@@ -8,7 +8,7 @@
     "scheme": "nekogo",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "dev.koukeneko.nekogo",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

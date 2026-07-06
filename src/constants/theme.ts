@@ -35,6 +35,8 @@ export const Fonts = Platform.select({
     serifBold: 'SourceHanSerif-Bold',
     rounded: 'ui-rounded',
     mono: 'JetBrainsMono-Regular',
+    lineSeed: 'LINESeed-Regular',
+    lineSeedBold: 'LINESeed-Bold',
   },
   default: {
     sans: 'normal',
@@ -42,12 +44,16 @@ export const Fonts = Platform.select({
     serifBold: 'SourceHanSerif-Bold',
     rounded: 'normal',
     mono: 'JetBrainsMono-Regular',
+    lineSeed: 'LINESeed-Regular',
+    lineSeedBold: 'LINESeed-Bold',
   },
   web: {
     sans: 'var(--font-display)',
     serif: 'var(--font-serif)',
     rounded: 'var(--font-rounded)',
     mono: 'JetBrainsMono-Regular',
+    lineSeed: 'LINESeed-Regular',
+    lineSeedBold: 'LINESeed-Bold',
   },
 });
 

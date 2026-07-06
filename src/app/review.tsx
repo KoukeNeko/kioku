@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   meaningText: {
     color: Colors.dark.text,
     fontSize: 28,
-    fontFamily: Fonts?.serif, // Serif font for English meaning if possible
+    fontFamily: Fonts?.lineSeed,
     marginBottom: Spacing.two,
   },
   posText: {

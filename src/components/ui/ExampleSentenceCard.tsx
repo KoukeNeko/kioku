@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from '
 import { Volume2 } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
 import { FuriganaText } from './FuriganaText';
-import { Colors, Spacing, BORDER_RADIUS } from '../../constants/theme';
+import { Colors, Spacing, BORDER_RADIUS, Fonts } from '../../constants/theme';
 
 interface ExampleSentenceCardProps {
     example: {
@@ -65,5 +65,6 @@ const styles = StyleSheet.create({
     sentenceEnglish: {
         color: Colors.dark.textSecondary,
         fontSize: 14,
+        fontFamily: Fonts?.lineSeed,
     },
 });
