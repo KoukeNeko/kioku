@@ -143,9 +143,7 @@ export default function SkimScreen() {
             <FuriganaText chunks={currentItem.kanji} fontSize={48} />
           </View>
 
-          <Text style={styles.readingText}>
-            {currentItem.kanji.map(k => k.rt || k.ruby).join('')}
-          </Text>
+
           
           <View style={styles.divider} />
           

@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   kanjiCharText: {
     color: Colors.dark.text,
     fontSize: 24,
-    fontFamily: Fonts?.serif,
+    fontFamily: Fonts?.lineSeed,
     fontWeight: 'bold',
   },
   kanjiBadge: {
