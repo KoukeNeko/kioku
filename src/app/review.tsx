@@ -55,6 +55,8 @@ export default function Review() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isSuspended, setIsSuspended] = useState(false);
   const [etymology, setEtymology] = useState<Etymology | null>(null);
+  // 本場複習的評分統計（結算畫面用）；重新開始時歸零。
+  const [ratingCounts, setRatingCounts] = useState<Partial<Record<Rating, number>>>({});
 
   useEffect(() => {
     if (!isDictionaryMode) return;
@@ -130,6 +132,7 @@ export default function Review() {
     } else {
       resetSession();
     }
+    setRatingCounts({});
     setIsFlipped(isDictionaryMode);
   };
 
@@ -138,6 +141,7 @@ export default function Review() {
   };
 
   const handleRating = (rating: Rating) => {
+    setRatingCounts((prev) => ({ ...prev, [rating]: (prev[rating] ?? 0) + 1 }));
     handleRate(rating);
     setIsFlipped(false);
   };
@@ -170,19 +174,34 @@ export default function Review() {
   }
 
   if (isFinished || !currentItem) {
+    const summaryItems = [
+      { rating: Rating.Again, label: 'もう一度', color: Colors.dark.ratingAgain },
+      { rating: Rating.Hard, label: '難しい', color: Colors.dark.ratingHard },
+      { rating: Rating.Good, label: '普通', color: Colors.dark.ratingGood },
+      { rating: Rating.Easy, label: '簡単', color: Colors.dark.ratingEasy },
+    ];
+    const totalReviewed = summaryItems.reduce((sum, item) => sum + (ratingCounts[item.rating] ?? 0), 0);
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]} edges={['top']}>
-        <Text style={{ color: Colors.dark.text, fontSize: 24, fontWeight: 'bold', marginBottom: Spacing.four }}>
-          複習完了！
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: Spacing.four }]} edges={['top']}>
+        <Text style={styles.finishedTitle}>復習完了！</Text>
+        <Text style={styles.finishedSubtitle}>
+          {totalReviewed > 0 ? `${totalReviewed}枚のカードを復習しました` : '復習するカードはありません'}
         </Text>
-        <TouchableOpacity 
-          onPress={() => {
-            resetSession();
-            setIsFlipped(false);
-          }}
-          style={[{ paddingHorizontal: Spacing.four, paddingVertical: Spacing.three, backgroundColor: Colors.dark.primaryOrange, borderRadius: BORDER_RADIUS.md }]}
+        {totalReviewed > 0 && (
+          <View style={styles.summaryCard}>
+            {summaryItems.map((item) => (
+              <View key={item.rating} style={styles.summaryItem}>
+                <Text style={[styles.summaryCount, { color: item.color }]}>{ratingCounts[item.rating] ?? 0}</Text>
+                <Text style={styles.summaryLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <TouchableOpacity
+          onPress={() => router.replace('/')}
+          style={styles.homeButton}
         >
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>もう一度 (Restart Mock)</Text>
+          <Text style={styles.homeButtonText}>ホームへ戻る</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -669,6 +688,54 @@ const styles = StyleSheet.create({
   kanjiMeaningText: {
     color: Colors.dark.text,
     fontSize: 14,
+  },
+  finishedTitle: {
+    color: Colors.dark.text,
+    fontSize: 28,
+    fontFamily: Fonts?.lineSeedJPBold,
+    marginBottom: Spacing.two,
+  },
+  finishedSubtitle: {
+    color: Colors.dark.textSecondary,
+    fontSize: 14,
+    fontFamily: Fonts?.lineSeedJP,
+    marginBottom: Spacing.five,
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    backgroundColor: '#16171B',
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#2E3135',
+    paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.three,
+    marginBottom: Spacing.six,
+    width: '100%',
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryCount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    color: Colors.dark.textSecondary,
+    fontSize: 11,
+    fontFamily: Fonts?.lineSeedJP,
+  },
+  homeButton: {
+    paddingHorizontal: Spacing.six,
+    paddingVertical: Spacing.three,
+    backgroundColor: Colors.dark.primaryOrange,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  homeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: Fonts?.lineSeedJPBold,
   },
   cardFlagsContainer: {
     position: 'absolute',
