@@ -28,7 +28,9 @@ export const CONTENT_ALIAS = 'content';
 // v19：--risk 佇列（副詞/感嘆詞/連接詞/助詞）全數翻畢，再補 6,724 筆入 gloss_zh，繁中重譯累計 12,417 筆；含大量常用詞（館内、悪性、前代未聞、共働き、自明、過渡期、風光明媚、当意即妙…）與擬聲擬態詞、それ／いずれ／ながら等連接詞助詞語感標註。
 // v20：非高風險常用詞繁中補譯——JLPT N5 核心名詞第一批 60 筆＋單詞精修（葛藤 かっとう/つづらふじ、筆 ふで）；gloss_zh 覆蓋 63,083。
 // v21：新增 vocab_etymology 詞源表（演化鏈 JSON＋信度＋出典連結）試批 15 筆（N5 高頻：いい、この、だけ、じゃ、とし…）；無可靠學說者入 skiplist 不佔位。
-const CONTENT_DB_FILE = 'kioku-content-v21.db';
+// v22：內容同 v21；強制重建副本（v21 首次複製時 Metro 中斷，裝置上留下缺表的壞副本）。
+// v23：補「筆（ふで）」詞源（文手→ふむで→ふで；語源由来辞典），vocab_etymology 共 16 筆。
+const CONTENT_DB_FILE = 'kioku-content-v23.db';
 // 舊版副本檔名：複製新版時順手清掉，避免 134MB 級的孤兒檔佔用空間。
 const STALE_CONTENT_DB_FILES = [
   'kioku-content-v4.db',
@@ -48,6 +50,8 @@ const STALE_CONTENT_DB_FILES = [
   'kioku-content-v18.db',
   'kioku-content-v19.db',
   'kioku-content-v20.db',
+  'kioku-content-v21.db',
+  'kioku-content-v22.db',
 ];
 const DEST_URI = `${FileSystem.documentDirectory}${CONTENT_DB_FILE}`;
 const DEST_PATH = DEST_URI.replace('file://', '');
