@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
-import * as Speech from 'expo-speech';
 import { FuriganaText } from './FuriganaText';
 import { Colors, Spacing, BORDER_RADIUS, Fonts } from '../../constants/theme';
+import { speakJapanese } from '../../utils/speech';
 
 interface ExampleSentenceCardProps {
     example: {
@@ -14,10 +14,6 @@ interface ExampleSentenceCardProps {
     style?: StyleProp<ViewStyle>;
     onPress?: () => void;
 }
-
-const speakJapanese = (text: string) => {
-    Speech.speak(text, { language: 'ja-JP', rate: 0.9 });
-};
 
 export const ExampleSentenceCard: React.FC<ExampleSentenceCardProps> = ({ example, style, onPress }) => {
     const Container = onPress ? TouchableOpacity : View;

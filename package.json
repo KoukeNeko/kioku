@@ -12,6 +12,7 @@
     "@react-native-masked-view/masked-view": "0.3.2",
     "expo": "~56.0.12",
     "expo-asset": "~56.0.17",
+    "expo-audio": "~56.0.12",
     "expo-blur": "~56.0.3",
     "expo-constants": "~56.0.18",
     "expo-dev-client": "~56.0.20",

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { X, Volume2, Bookmark, EyeOff } from "lucide-react-native";
 import Svg, { Line, Circle } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Speech from "expo-speech";
 import { Colors, Spacing, Fonts, BORDER_RADIUS } from "../constants/theme";
 import { FuriganaText } from "../components/ui/FuriganaText";
 import { FlashCard } from '../components/ui/FlashCard';
@@ -23,6 +22,7 @@ import { getEtymology, Etymology } from "../db/repositories/etymologyRepository"
 import { EtymologyCard } from "../components/ui/EtymologyCard";
 import { ActivityIndicator } from "react-native";
 import { PitchAccent } from "../components/ui/PitchAccent";
+import { speakJapanese } from "../utils/speech";
 
 interface FuriganaSegment {
     ruby: string;
@@ -31,12 +31,6 @@ interface FuriganaSegment {
 
 const readingOf = (chunks: FuriganaSegment[]): string =>
     chunks.map((chunk) => chunk.rt ?? chunk.ruby).join('');
-
-// 用裝置端 TTS 唸出日文（語言固定 ja-JP，避免被誤判為中文）。
-const speakJapanese = (text: string) => {
-    Speech.stop();
-    Speech.speak(text, { language: 'ja-JP' });
-};
 
 export default function Review() {
   const router = useRouter();

@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Volume2, PenTool, EyeOff, Eye } from 'lucide-react-native';
-import * as Speech from 'expo-speech';
 import { Colors, Spacing, Fonts, BORDER_RADIUS } from '../constants/theme';
 import { AppBar } from '../components/ui/AppBar';
 import { KanjiStrokeBoard } from '../components/ui/KanjiStrokeBoard';
@@ -12,6 +11,7 @@ import { getKanjiWords, getKanjiExamples, RelatedWord, RelatedExample } from '..
 import { FuriganaText } from '../components/ui/FuriganaText';
 import { ExampleSentenceCard } from '../components/ui/ExampleSentenceCard';
 import { BackButton } from '../components/ui/BackButton';
+import { speakJapanese } from '../utils/speech';
 
 const { width } = Dimensions.get('window');
 
@@ -29,10 +29,6 @@ interface KanjiEntry {
 }
 
 const KANJI_BY_CHAR = kanjiData.kanji as Record<string, KanjiEntry>;
-
-const speakJapanese = (text: string) => {
-    Speech.speak(text, { language: 'ja-JP', rate: 0.9 });
-};
 
 export default function StrokeOrder() {
     const router = useRouter();
