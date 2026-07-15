@@ -1,7 +1,7 @@
 # FSRS Native Optimizer — Rust 交叉編譯 + iOS/Android 原生模組
 
 > FSRS 參數個人化（用使用者複習歷史訓練 `w`）的原生實作紀錄。
-> 計畫與決策過程見 [`PROPOSED_PLAN.md`](../PROPOSED_PLAN.md)；本檔記錄**實際做了什麼、怎麼交叉編譯、如何重建**。
+> 計畫與決策過程見 `PROPOSED_PLAN.md`（本機規劃日誌，不入版控）；本檔記錄**實際做了什麼、怎麼交叉編譯、如何重建**。
 
 ## 為什麼要原生模組
 

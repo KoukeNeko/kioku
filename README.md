@@ -90,7 +90,6 @@ npx tsc --noEmit       # 型別檢查
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | 內容庫資料模型與關聯圖 |
 | [docs/FSRS_NATIVE_OPTIMIZER.md](docs/FSRS_NATIVE_OPTIMIZER.md) | Rust 原生優化器的實作、交叉編譯與驗證紀錄 |
 | [RESOURCES.md](RESOURCES.md) | 外部資源總目錄：每筆資料來源的授權與商用風險盤點 |
-| [PROPOSED_PLAN.md](PROPOSED_PLAN.md) | 歷次功能實作計畫（累積式日誌） |
 
 ## 資料來源與授權
 

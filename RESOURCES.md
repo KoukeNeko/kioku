@@ -4,7 +4,7 @@
 > **範圍**：四大類全覆蓋；商用乾淨與灰色地帶都列，清楚標風險。
 > **查證基準**：2026-06，由四組平行研究 agent 以一手來源（GitHub / npm / 授權頁 / 政府公報）實查，非憑記憶推測。
 > **免責**：本文為技術與授權現況研究，**非法律意見**。所有 ⚠️/❌ 項目商用上線前請經智財法務確認。
-> **配套文件**：[PROPOSED_PLAN.md](PROPOSED_PLAN.md)（實作藍圖）、[../../momo/compass_artifact…md](../../momo/compass_artifact_wf-d7ccc396-d7b4-4083-bc94-c2a455637927_text_markdown.md)（戰略研究報告）。
+> **配套文件**：PROPOSED_PLAN.md（實作藍圖，本機規劃日誌、不入版控）、[../../momo/compass_artifact…md](../../momo/compass_artifact_wf-d7ccc396-d7b4-4083-bc94-c2a455637927_text_markdown.md)（戰略研究報告）。
 
 ---
 
@@ -418,7 +418,7 @@ AnimCJK / makemeahanzi 用 Arphic copyleft 字型（1999 版可商用、2010 版
 
 ## 7. 整合優先序 Roadmap
 
-> 對應 [PROPOSED_PLAN.md](PROPOSED_PLAN.md) 的三階段。所有可商用資料一律在 **build 階段離線 ETL 成 op-sqlite `.db` 隨 App 打包**，runtime 只查表，避免 RN 端大型 JSON 解析。
+> 對應 PROPOSED_PLAN.md（本機規劃日誌）的三階段。所有可商用資料一律在 **build 階段離線 ETL 成 op-sqlite `.db` 隨 App 打包**，runtime 只查表，避免 RN 端大型 JSON 解析。
 
 ### Phase 1 — MVP 內容地基（換掉所有 mock）
 
