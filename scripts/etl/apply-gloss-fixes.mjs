@@ -27,6 +27,11 @@ const GLOSS_FIXES = [
     reading: 'ふで',
     gloss_zh: '毛筆；畫筆；（書寫用的）筆',
   },
+  {
+    expression: '滑る',
+    reading: 'すべる',
+    gloss_zh: '滑；滑動；滑行（滑雪、溜冰）；（口）落榜；（笑話）冷場',
+  },
 ];
 
 const db = new DatabaseSync(CONTENT_DB_PATH);
