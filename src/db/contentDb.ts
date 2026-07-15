@@ -33,7 +33,8 @@ export const CONTENT_ALIAS = 'content';
 // v24：詞源內文雙語化——explanation_en 欄＋stage period_en/note_en，16 筆全補齊；App 依語言設定切換、缺譯退回繁中。
 // v25：補「行方（ゆくえ）」詞源（行く＋方（へ）→ゆくへ→ゆくえ；ハ行転呼），vocab_etymology 共 17 筆。
 // v26：詞源欄位日文化——origin_type/confidence 枚舉與 stage period 改日文（音変化/漢語/複合語/意味変化；定説/有力説），移除 period_en；僅 note/explanation 維持繁中＋英文雙語。
-const CONTENT_DB_FILE = 'kioku-content-v26.db';
+// v27：補「結ぶ（むすぶ）」詞源（語根むす（産す）＋動詞化；産霊むすひ同根說），新增「派生語」類型，vocab_etymology 共 18 筆。
+const CONTENT_DB_FILE = 'kioku-content-v27.db';
 // 舊版副本檔名：複製新版時順手清掉，避免 134MB 級的孤兒檔佔用空間。
 const STALE_CONTENT_DB_FILES = [
   'kioku-content-v4.db',
@@ -58,6 +59,7 @@ const STALE_CONTENT_DB_FILES = [
   'kioku-content-v23.db',
   'kioku-content-v24.db',
   'kioku-content-v25.db',
+  'kioku-content-v26.db',
 ];
 const DEST_URI = `${FileSystem.documentDirectory}${CONTENT_DB_FILE}`;
 const DEST_PATH = DEST_URI.replace('file://', '');

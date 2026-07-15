@@ -8,7 +8,7 @@
 //   - 雙語內文僅 note 與 explanation：explanation_zh（台灣繁中）＋ explanation_en 同批產出，
 //     stage 的 note 另附 note_en。App 依語言設定切換，缺譯退回繁中。
 //   - stage 的 period 用日文術語（上代語、中古中国語、近世（江戸）…），不做雙語。
-//   - confidence ∈ 定説|有力説|一説|俗説；origin_type ∈ 音変化|意味変化|漢語|複合語|外来語|オノマトペ（一律日文）。
+//   - confidence ∈ 定説|有力説|一説|俗説；origin_type ∈ 音変化|意味変化|漢語|複合語|派生語|外来語|オノマトペ（一律日文）。
 //   - 著作權：explanation／note 須為原創改寫（陳述學說事實），嚴禁逐字轉錄辭典或網站原文；
 //     source 僅為學說出處的引用標注，非內容授權來源。
 //   - source：該學說可查證的出處名稱（如「日本国語大辞典」「語源由来辞典」），無明確出處可為 null。

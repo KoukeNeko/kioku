@@ -1,7 +1,7 @@
 // vocab_etymology 資料驗證規則（apply 與 verify 共用，單一事實來源）。
 
 // 枚舉值＝畫面徽章文字，一律日文（與 App 的日文 UI 一致）；只有 note／explanation 提供繁中＋英文雙語。
-export const ORIGIN_TYPES = ['音変化', '意味変化', '漢語', '複合語', '外来語', 'オノマトペ'];
+export const ORIGIN_TYPES = ['音変化', '意味変化', '漢語', '複合語', '派生語', '外来語', 'オノマトペ'];
 export const CONFIDENCE_LEVELS = ['定説', '有力説', '一説', '俗説'];
 
 // 純ひらがな＋長音符。stage 的 reading 可為 null（外語原詞、中古漢語等無假名讀音時），非 null 則必須符合。
