@@ -94,16 +94,34 @@ const ensureContentDbCopied = async (): Promise<void> => {
  * 版本 bump 會累積成 GB 級孤兒檔）。副本已在 documentDirectory，快取一律可刪；
  * 極端情況（同版重灌）expo-asset 會自動重新下載，故連當前版的快取也可安全清除。
  */
-const cleanupContentAssetCaches = async (): Promise<void> => {
+const listContentAssetCaches = async (): Promise<string[]> => {
   const cacheDirectory = FileSystem.cacheDirectory;
-  if (!cacheDirectory) return;
+  if (!cacheDirectory) return [];
+  const cacheFiles = await FileSystem.readDirectoryAsync(cacheDirectory);
+  return cacheFiles
+    .filter((name) => name.startsWith('ExponentAsset-') && name.endsWith('.db'))
+    .map((name) => `${cacheDirectory}${name}`);
+};
+
+/** 目前內容庫資產快取占用的位元組數（設定頁「キャッシュを削除」顯示用）。 */
+export const getContentAssetCacheBytes = async (): Promise<number> => {
   try {
-    const cacheFiles = await FileSystem.readDirectoryAsync(cacheDirectory);
-    const staleAssetDbs = cacheFiles.filter(
-      (name) => name.startsWith('ExponentAsset-') && name.endsWith('.db'),
-    );
+    let totalBytes = 0;
+    for (const cacheUri of await listContentAssetCaches()) {
+      const info = await FileSystem.getInfoAsync(cacheUri);
+      if (info.exists && !info.isDirectory) totalBytes += info.size ?? 0;
+    }
+    return totalBytes;
+  } catch {
+    return 0;
+  }
+};
+
+export const cleanupContentAssetCaches = async (): Promise<void> => {
+  try {
+    const staleAssetDbs = await listContentAssetCaches();
     for (const staleAssetDb of staleAssetDbs) {
-      await FileSystem.deleteAsync(`${cacheDirectory}${staleAssetDb}`, { idempotent: true });
+      await FileSystem.deleteAsync(staleAssetDb, { idempotent: true });
     }
     if (staleAssetDbs.length > 0) {
       console.log(`🧹 已清除 ${staleAssetDbs.length} 份內容庫資產快取`);

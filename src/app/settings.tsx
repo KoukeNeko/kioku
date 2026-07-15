@@ -19,6 +19,7 @@ import {
   setTargetRetention,
 } from "../db/repositories/uiSettingsRepository";
 import { applyStoredParameters } from "../services/fsrs";
+import { cleanupContentAssetCaches, getContentAssetCacheBytes } from "../db/contentDb";
 
 const DummySlider = ({ width = 100, fillPercent = 80, color = Colors.dark.primaryOrange }) => {
   return (
@@ -53,6 +54,7 @@ export default function SettingsScreen() {
   const [cardOrder, setCardOrder] = useState<'追加順' | 'ランダム'>('追加順');
   const [dailyNewLimit, setDailyNewLimitState] = useState<number>(() => getDailyNewLimit());
   const [targetRetention, setTargetRetentionState] = useState<number>(() => getTargetRetention());
+  const [cacheBytes, setCacheBytes] = useState<number | null>(null);
   const [pitchAccent, setPitchAccent] = useState<'上線' | '数字'>('上線');
   const [displayFont, setDisplayFont] = useState<'明朝' | 'ゴシック'>('明朝');
   const [themeMode, setThemeMode] = useState<'システム' | 'ライト' | 'ダーク'>('ダーク');
@@ -69,7 +71,15 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('讀取複習筆數失敗', error);
     }
+    getContentAssetCacheBytes().then(setCacheBytes).catch(() => setCacheBytes(0));
   }, []);
+
+  const handleClearCache = async () => {
+    await cleanupContentAssetCaches();
+    const remainingBytes = await getContentAssetCacheBytes().catch(() => 0);
+    setCacheBytes(remainingBytes);
+    Alert.alert('キャッシュを削除', 'コンテンツキャッシュを削除しました');
+  };
 
   const handleOptimize = async () => {
     if (optimizing) return;
@@ -274,7 +284,11 @@ export default function SettingsScreen() {
           <SettingsDivider />
           <SettingsRow label="エクスポート" valueText="近日公開" />
           <SettingsDivider />
-          <SettingsRow label="キャッシュを削除" valueText="124 MB" onPress={() => { }} />
+          <SettingsRow
+            label="キャッシュを削除"
+            valueText={cacheBytes == null ? '…' : `${(cacheBytes / (1024 * 1024)).toFixed(1)} MB`}
+            onPress={handleClearCache}
+          />
         </SettingsCard>
 
         {/* Section 6: About / Legal */}
