@@ -48,3 +48,6 @@ scripts/etl/.venv/
 
 # 打包用內容庫（134MB，由 npm run content 產出並置於此；如需跨機器共用建議改用 Git LFS 追蹤）
 assets/db/*.db
+
+# fsrs-native 原生模組的 Gradle 快取（建置產物，不入版控）
+modules/fsrs-native/android/.gradle/
