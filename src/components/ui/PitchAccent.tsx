@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Line, Circle } from 'react-native-svg';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 
 /**
  * 東京式音高重音圖（downstep 標記）。
@@ -108,5 +108,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 16,
     textAlign: 'center',
+    fontFamily: Fonts?.lineSeedJP,
   },
 });

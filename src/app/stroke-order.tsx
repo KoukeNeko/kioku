@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     readingText: {
         color: Colors.dark.text,
         fontSize: 16,
-        fontFamily: Fonts?.sans,
+        fontFamily: Fonts?.lineSeedJP,
     },
     tabContainer: {
         flexDirection: 'row',

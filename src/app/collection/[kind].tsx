@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
   rubyText: {
     color: Colors.dark.primaryOrange,
     fontSize: 12,
+    fontFamily: Fonts?.lineSeedJP,
   },
   cardMain: {
     flexDirection: 'column',
@@ -164,6 +165,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginRight: Spacing.three,
     flex: 1,
+    fontFamily: Fonts?.lineSeedJP,
   },
   glossText: {
     color: Colors.dark.textSecondary,

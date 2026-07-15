@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Colors, Spacing, BORDER_RADIUS } from "../constants/theme";
+import { Colors, Spacing, BORDER_RADIUS, Fonts } from "../constants/theme";
 import { search, VocabSearchResult, KanjiSearchResult, DeckSearchResult } from "../db/repositories/searchRepository";
 import { HighlightText } from "../components/ui/HighlightText";
 
@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
   rubyText: {
     color: Colors.dark.primaryOrange,
     fontSize: 12,
+    fontFamily: Fonts?.lineSeedJP,
   },
   cardMain: {
     flexDirection: 'column',
@@ -336,6 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginRight: Spacing.three,
     flex: 1,
+    fontFamily: Fonts?.lineSeedJP,
   },
   glossText: {
     color: Colors.dark.textSecondary,
@@ -373,6 +375,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.primaryOrange,
     fontSize: 28,
     marginRight: Spacing.three,
+    fontFamily: Fonts?.lineSeedJP,
   },
   kanjiDetails: {
     flex: 1,
@@ -385,6 +388,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontSize: 12,
     marginTop: 2,
+    fontFamily: Fonts?.lineSeedJP,
   },
   deckCardInner: {
     flexDirection: 'row',

@@ -558,6 +558,7 @@ const styles = StyleSheet.create({
   pitchKanaText: {
     color: Colors.dark.text,
     fontSize: 18,
+    fontFamily: Fonts?.lineSeedJP,
   },
   pitchRightArea: {
     flexDirection: 'row',
@@ -646,8 +647,7 @@ const styles = StyleSheet.create({
   kanjiCharText: {
     color: Colors.dark.text,
     fontSize: 24,
-    fontFamily: Fonts?.lineSeed,
-    fontWeight: 'bold',
+    fontFamily: Fonts?.lineSeedJPBold,
   },
   kanjiBadge: {
     backgroundColor: '#1C2939',
@@ -664,6 +664,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontSize: 12,
     marginBottom: 2,
+    fontFamily: Fonts?.lineSeedJP,
   },
   kanjiMeaningText: {
     color: Colors.dark.text,
