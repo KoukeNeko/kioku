@@ -288,12 +288,21 @@ export const fetchVocabDetail = async (vocabId: string): Promise<ApiVocabDetail>
   return { ...rowToVocab(base), examples, kanji };
 };
 
-/** 單字詞源（語源）。查無資料或內容庫尚無 vocab_etymology 表（舊版副本）皆回傳 null。 */
+// DB 內的 stage 原始形：period/note 為繁中，period_en/note_en 為英文（可缺，缺則退回中文）。
+interface RawEtymologyStage extends ApiEtymologyStage {
+  period_en?: string | null;
+  note_en?: string | null;
+}
+
+/**
+ * 單字詞源（語源）。查無資料或內容庫尚無 vocab_etymology 表（舊版副本）皆回傳 null。
+ * 內文（說明、stage 的 period/note）依語言設定回傳，缺譯互為 fallback；UI 標籤不受影響。
+ */
 export const fetchVocabEtymology = async (vocabId: string): Promise<ApiEtymology | null> => {
   let row: any;
   try {
     row = db.executeSync(
-      `SELECT origin_type, evolution, explanation_zh, confidence, source, source_url` +
+      `SELECT origin_type, evolution, explanation_zh, explanation_en, confidence, source, source_url` +
         ` FROM ${C}.vocab_etymology WHERE vocab_id = ?`,
       [vocabId],
     ).rows?.[0];
@@ -303,14 +312,21 @@ export const fetchVocabEtymology = async (vocabId: string): Promise<ApiEtymology
   if (!row) {
     return null;
   }
-  const evolution = parseJsonOrNull<{ stages: ApiEtymologyStage[] }>(row.evolution);
+  const evolution = parseJsonOrNull<{ stages: RawEtymologyStage[] }>(row.evolution);
   if (!evolution?.stages?.length) {
     return null;
   }
+  const isEnglish = translationLanguage === 'en';
+  const pickText = <T extends string | null>(zh: T, en: string | null | undefined): T | string =>
+    (isEnglish ? en ?? zh : zh) as T | string;
   return {
     originType: row.origin_type,
-    stages: evolution.stages,
-    explanationZh: row.explanation_zh,
+    stages: evolution.stages.map(({ period_en, note_en, ...stage }) => ({
+      ...stage,
+      period: pickText(stage.period, period_en) as string,
+      note: pickText(stage.note, note_en),
+    })),
+    explanationZh: pickText(row.explanation_zh, row.explanation_en) as string,
     confidence: row.confidence,
     source: row.source ?? null,
     sourceUrl: row.source_url ?? null,

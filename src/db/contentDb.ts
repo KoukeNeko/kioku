@@ -30,7 +30,8 @@ export const CONTENT_ALIAS = 'content';
 // v21：新增 vocab_etymology 詞源表（演化鏈 JSON＋信度＋出典連結）試批 15 筆（N5 高頻：いい、この、だけ、じゃ、とし…）；無可靠學說者入 skiplist 不佔位。
 // v22：內容同 v21；強制重建副本（v21 首次複製時 Metro 中斷，裝置上留下缺表的壞副本）。
 // v23：補「筆（ふで）」詞源（文手→ふむで→ふで；語源由来辞典），vocab_etymology 共 16 筆。
-const CONTENT_DB_FILE = 'kioku-content-v23.db';
+// v24：詞源內文雙語化——explanation_en 欄＋stage period_en/note_en，16 筆全補齊；App 依語言設定切換、缺譯退回繁中。
+const CONTENT_DB_FILE = 'kioku-content-v24.db';
 // 舊版副本檔名：複製新版時順手清掉，避免 134MB 級的孤兒檔佔用空間。
 const STALE_CONTENT_DB_FILES = [
   'kioku-content-v4.db',
@@ -52,6 +53,7 @@ const STALE_CONTENT_DB_FILES = [
   'kioku-content-v20.db',
   'kioku-content-v21.db',
   'kioku-content-v22.db',
+  'kioku-content-v23.db',
 ];
 const DEST_URI = `${FileSystem.documentDirectory}${CONTENT_DB_FILE}`;
 const DEST_PATH = DEST_URI.replace('file://', '');
