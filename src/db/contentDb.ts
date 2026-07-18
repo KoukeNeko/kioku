@@ -39,8 +39,12 @@ export const CONTENT_ALIAS = 'content';
 // v30：補「参る（まいる）」（まゐ＋入る；謙譲語原理）與「お参り」（お＋参り派生）詞源＋兩者繁中釋義（原缺譯），vocab_etymology 共 22 筆。
 // v31：新增 meta 表（content_version 蓋章）；掛載時核對版本，抓「檔名新、內容舊」的走樣副本（Metro 資產快取曾造成 v30 副本缺 参る/お参り）。另補 お参り 詞源出典（デジタル大辞泉）。
 // v32：補「初詣（はつもうで）」詞源（詣づ＝まゐ＋出づ；1885 年鐵道時代新詞，平山昇研究）與繁中釋義（原缺譯），vocab_etymology 共 23 筆。
+// v33：詞源夜間批次 ×2——N5 高頻 35 筆入庫（ついたち月立ち、前＝目＋方、できる＝出で来、あと＝足＋処、さん＝さま轉、
+//      被覆形／露出形（目・上）、和語曆日系統（ふつか〜いつか）、字音雙層（一二万分円回時）…），5 筆無定說入 skiplist；共 58 筆。
+// v34：詞源夜間批次 3——再入 17 筆（だれ＜たれ與黄昏、できる系曆日詞補完（むいか〜ここのか）、仕事＝し＋こと、
+//      あなた敬避與敬意磨損、まだ＜いまだ、ちょっと＜ちと、こんな縮約…），3 筆入 skiplist；共 75 筆。
 // ※ bump 版本後記得執行 node scripts/etl/sync-content-version.mjs 重新蓋章。
-const CONTENT_DB_FILE = 'kioku-content-v32.db';
+const CONTENT_DB_FILE = 'kioku-content-v34.db';
 // 舊版副本檔名：複製新版時順手清掉，避免 134MB 級的孤兒檔佔用空間。
 const STALE_CONTENT_DB_FILES = [
   'kioku-content-v4.db',
@@ -71,6 +75,8 @@ const STALE_CONTENT_DB_FILES = [
   'kioku-content-v29.db',
   'kioku-content-v30.db',
   'kioku-content-v31.db',
+  'kioku-content-v32.db',
+  'kioku-content-v33.db',
 ];
 const DEST_URI = `${FileSystem.documentDirectory}${CONTENT_DB_FILE}`;
 const DEST_PATH = DEST_URI.replace('file://', '');
