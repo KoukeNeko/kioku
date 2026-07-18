@@ -55,3 +55,7 @@ modules/fsrs-native/android/.gradle/
 # 規劃日誌（本機工作檔，不入版控）
 PROPOSED_PLAN.md
 .omx/
+
+# Go dictionary TTS API runtime files
+server/.env
+server/data/
