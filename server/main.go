@@ -79,9 +79,6 @@ func run(args []string) int {
 			return 1
 		}
 	case "prewarm":
-		if cfg.irodoriAPIKey == "" {
-			logger.Warn("IRODORI_API_KEY is empty; upstream authentication is disabled")
-		}
 		if err := runPrewarm(shutdownContext, commandArgs, cfg, service, textOverrides, logger); err != nil {
 			logger.Error("prewarm failed", "error", err)
 			return 1
