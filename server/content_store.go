@@ -15,6 +15,7 @@ var errContentNotFound = errors.New("dictionary content not found")
 
 type contentResolver interface {
 	lookupText(context.Context, string) (string, error)
+	countEntries(context.Context) (int64, error)
 	ping(context.Context) error
 }
 
@@ -87,4 +88,14 @@ func (s *contentStore) lookupText(ctx context.Context, entryID string) (string, 
 		return "", errContentNotFound
 	}
 	return text, nil
+}
+
+func (s *contentStore) countEntries(ctx context.Context) (int64, error) {
+	var count int64
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT (SELECT COUNT(*) FROM vocab) + (SELECT COUNT(*) FROM example)`,
+	).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count dictionary audio entries: %w", err)
+	}
+	return count, nil
 }

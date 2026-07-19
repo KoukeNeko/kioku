@@ -36,6 +36,11 @@ type audioAsset struct {
 	updatedAt time.Time
 }
 
+type readyAssetSummary struct {
+	count      int64
+	totalBytes int64
+}
+
 type assetStore struct {
 	db       *sql.DB
 	audioDir string
@@ -130,6 +135,59 @@ func (s *assetStore) lookupReady(ctx context.Context, identity audioIdentity) (a
 	}
 	asset.updatedAt = time.Unix(updatedAt, 0)
 	return asset, nil
+}
+
+func (s *assetStore) forEachReady(ctx context.Context, profile audioIdentity, visit func(audioAsset) error) error {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT entry_id, text, text_hash, object_key, etag, size_bytes, updated_at
+		FROM audio_assets
+		WHERE voice_id = ? AND format = ? AND speed_milli = ?
+		  AND voice_version = ? AND model_revision = ? AND profile_version = ?
+		  AND status = 'ready'
+		ORDER BY entry_id`,
+		profile.voice, profile.format, profile.speedMilli,
+		profile.voiceVersion, profile.modelRevision, profile.profileVersion,
+	)
+	if err != nil {
+		return fmt.Errorf("query ready audio assets: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		asset := audioAsset{identity: profile}
+		var updatedAt int64
+		if err := rows.Scan(
+			&asset.identity.entryID, &asset.text, &asset.textHash,
+			&asset.objectKey, &asset.etag, &asset.sizeBytes, &updatedAt,
+		); err != nil {
+			return fmt.Errorf("scan ready audio asset: %w", err)
+		}
+		asset.updatedAt = time.Unix(updatedAt, 0)
+		if err := visit(asset); err != nil {
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate ready audio assets: %w", err)
+	}
+	return nil
+}
+
+func (s *assetStore) summarizeReady(ctx context.Context, profile audioIdentity) (readyAssetSummary, error) {
+	var summary readyAssetSummary
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(SUM(size_bytes), 0)
+		FROM audio_assets
+		WHERE voice_id = ? AND format = ? AND speed_milli = ?
+		  AND voice_version = ? AND model_revision = ? AND profile_version = ?
+		  AND status = 'ready'`,
+		profile.voice, profile.format, profile.speedMilli,
+		profile.voiceVersion, profile.modelRevision, profile.profileVersion,
+	).Scan(&summary.count, &summary.totalBytes)
+	if err != nil {
+		return readyAssetSummary{}, fmt.Errorf("summarize ready audio assets: %w", err)
+	}
+	return summary, nil
 }
 
 func (s *assetStore) markGenerating(ctx context.Context, identity audioIdentity, text, textHash string) error {

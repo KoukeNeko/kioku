@@ -50,6 +50,15 @@ type audioService struct {
 	flights        map[string]struct{}
 }
 
+type audioManifestSummary struct {
+	profileID  string
+	format     string
+	expected   int64
+	ready      int64
+	totalBytes int64
+	assets     []audioAsset
+}
+
 func newAudioService(cfg config, store *assetStore, content contentResolver, client synthesisClient, textOverrides map[string]string, logger *slog.Logger) *audioService {
 	return &audioService{
 		client:         client,
@@ -213,6 +222,50 @@ func (s *audioService) readyAsset(ctx context.Context, entryID, voice, format st
 
 func (s *audioService) deleteAudio(ctx context.Context, entryID, voice, format string, speed float64) (bool, error) {
 	return s.store.deleteAsset(ctx, s.identity(entryID, voice, format, speed))
+}
+
+func (s *audioService) prepareManifest(ctx context.Context, voice, format string, speed float64) (audioManifestSummary, error) {
+	if s.content == nil {
+		return audioManifestSummary{}, fmt.Errorf("content resolver is not configured")
+	}
+	profile := s.identity("", voice, format, speed)
+	var invalid []audioIdentity
+	var assets []audioAsset
+	var totalBytes int64
+	err := s.store.forEachReady(ctx, profile, func(asset audioAsset) error {
+		assetPath, pathErr := s.store.assetPath(asset.objectKey)
+		if pathErr != nil {
+			invalid = append(invalid, asset.identity)
+			return nil
+		}
+		info, statErr := os.Stat(assetPath)
+		if statErr != nil || !info.Mode().IsRegular() || info.Size() != asset.sizeBytes {
+			invalid = append(invalid, asset.identity)
+			return nil
+		}
+		assets = append(assets, asset)
+		totalBytes += asset.sizeBytes
+		return nil
+	})
+	if err != nil {
+		return audioManifestSummary{}, err
+	}
+	for _, identity := range invalid {
+		s.invalidateAsset(ctx, identity, "indexed audio file is missing or invalid during manifest reconciliation")
+	}
+
+	expected, err := s.content.countEntries(ctx)
+	if err != nil {
+		return audioManifestSummary{}, err
+	}
+	return audioManifestSummary{
+		profileID:  s.profileID(),
+		format:     format,
+		expected:   expected,
+		ready:      int64(len(assets)),
+		totalBytes: totalBytes,
+		assets:     assets,
+	}, nil
 }
 
 func (s *audioService) invalidateAsset(ctx context.Context, identity audioIdentity, reason string) {

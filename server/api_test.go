@@ -209,6 +209,148 @@ func TestDeleteAudioRemovesOnlyRequestedAssetAndAllowsRegeneration(t *testing.T)
 	}
 }
 
+func TestManifestStreamsOnlyValidReadyAssetsInStableOrder(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		_, _ = response.Write([]byte("ready-audio"))
+	}))
+	defer upstream.Close()
+	runtime := newTestRuntime(t, upstream.URL)
+
+	for _, request := range []synthesisRequest{
+		{entryID: "vocab:t-ありがとう-ありがとう", text: "ありがとう"},
+		{entryID: "example:42", text: "自然な例文です。"},
+	} {
+		request.voice = runtime.cfg.defaultVoice
+		request.format = runtime.cfg.defaultFormat
+		request.speed = runtime.cfg.defaultSpeed
+		if _, err := runtime.service.prewarm(context.Background(), request, false); err != nil {
+			t.Fatalf("prewarm %s: %v", request.entryID, err)
+		}
+	}
+
+	response := performAudioGET(runtime.handler, "app-secret", "/api/v1/dictionary-audio/manifest.ndjson")
+	if response.Code != http.StatusOK {
+		t.Fatalf("manifest status=%d body=%s", response.Code, response.Body.String())
+	}
+	if got := response.Header().Get("Content-Type"); got != "application/x-ndjson; charset=utf-8" {
+		t.Fatalf("Content-Type=%q", got)
+	}
+	decoder := json.NewDecoder(response.Body)
+	var header struct {
+		Type          string `json:"type"`
+		SchemaVersion int    `json:"schema_version"`
+		ProfileID     string `json:"profile_id"`
+		Format        string `json:"format"`
+		ExpectedCount int64  `json:"expected_count"`
+		ReadyCount    int64  `json:"ready_count"`
+		TotalBytes    int64  `json:"total_bytes"`
+	}
+	if err := decoder.Decode(&header); err != nil {
+		t.Fatalf("decode manifest header: %v", err)
+	}
+	if header.Type != "manifest" || header.SchemaVersion != 1 || header.ProfileID == "" ||
+		header.Format != runtime.cfg.defaultFormat || header.ExpectedCount != 3 ||
+		header.ReadyCount != 2 || header.TotalBytes != 2*int64(len("ready-audio")) {
+		t.Fatalf("manifest header=%+v", header)
+	}
+
+	var entryIDs []string
+	for decoder.More() {
+		var asset struct {
+			Type      string `json:"type"`
+			EntryID   string `json:"entry_id"`
+			SHA256    string `json:"sha256"`
+			SizeBytes int64  `json:"size_bytes"`
+		}
+		if err := decoder.Decode(&asset); err != nil {
+			t.Fatalf("decode manifest asset: %v", err)
+		}
+		if asset.Type != "asset" || len(asset.SHA256) != 64 || asset.SizeBytes != int64(len("ready-audio")) {
+			t.Fatalf("manifest asset=%+v", asset)
+		}
+		entryIDs = append(entryIDs, asset.EntryID)
+	}
+	want := []string{"example:42", "vocab:t-ありがとう-ありがとう"}
+	if fmt.Sprint(entryIDs) != fmt.Sprint(want) {
+		t.Fatalf("entry order=%v want=%v", entryIDs, want)
+	}
+}
+
+func TestManifestInvalidatesIndexedMissingFile(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		_, _ = response.Write([]byte("ready-audio"))
+	}))
+	defer upstream.Close()
+	runtime := newTestRuntime(t, upstream.URL)
+	result, err := runtime.service.prewarm(context.Background(), synthesisRequest{
+		entryID: "example:42", text: "自然な例文です。", voice: runtime.cfg.defaultVoice,
+		format: runtime.cfg.defaultFormat, speed: runtime.cfg.defaultSpeed,
+	}, false)
+	if err != nil {
+		t.Fatalf("prewarm: %v", err)
+	}
+	path, _ := runtime.store.assetPath(result.asset.objectKey)
+	if err := os.Remove(path); err != nil {
+		t.Fatalf("remove indexed file: %v", err)
+	}
+
+	response := performAudioGET(runtime.handler, "app-secret", "/api/v1/dictionary-audio/manifest.ndjson")
+	if response.Code != http.StatusOK {
+		t.Fatalf("manifest status=%d body=%s", response.Code, response.Body.String())
+	}
+	decoder := json.NewDecoder(response.Body)
+	var header struct {
+		ReadyCount int64 `json:"ready_count"`
+		TotalBytes int64 `json:"total_bytes"`
+	}
+	if err := decoder.Decode(&header); err != nil {
+		t.Fatalf("decode manifest header: %v", err)
+	}
+	if header.ReadyCount != 0 || header.TotalBytes != 0 || decoder.More() {
+		t.Fatalf("manifest included missing file: header=%+v body=%s", header, response.Body.String())
+	}
+}
+
+func TestReadyDownloadsBypassGenerationRateLimit(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		_, _ = response.Write([]byte("ready-audio"))
+	}))
+	defer upstream.Close()
+	runtime := newTestRuntime(t, upstream.URL)
+	if _, err := runtime.service.prewarm(context.Background(), synthesisRequest{
+		entryID: "example:42", text: "自然な例文です。", voice: runtime.cfg.defaultVoice,
+		format: runtime.cfg.defaultFormat, speed: runtime.cfg.defaultSpeed,
+	}, false); err != nil {
+		t.Fatalf("prewarm: %v", err)
+	}
+
+	limiter := newFixedWindowLimiter(1)
+	if !limiter.allow("192.0.2.1") {
+		t.Fatal("prime rate limiter")
+	}
+	api := &apiServer{
+		service: runtime.service, appAPIKey: "app-secret", defaultVoice: runtime.cfg.defaultVoice,
+		defaultFormat: runtime.cfg.defaultFormat, defaultSpeed: runtime.cfg.defaultSpeed,
+		logger: slog.New(slog.NewTextHandler(io.Discard, nil)), rateLimiter: limiter,
+	}
+	handler := api.routes()
+
+	ready := performAudioGET(handler, "app-secret", "/api/v1/dictionary-audio/example/42")
+	if ready.Code != http.StatusOK || ready.Body.String() != "ready-audio" {
+		t.Fatalf("ready status=%d body=%s", ready.Code, ready.Body.String())
+	}
+	missing := performAudioGET(handler, "app-secret", "/api/v1/dictionary-audio/example/7")
+	if missing.Code != http.StatusTooManyRequests || readErrorCode(t, missing.Body.Bytes()) != "rate_limited" {
+		t.Fatalf("missing status=%d body=%s", missing.Code, missing.Body.String())
+	}
+}
+
 func TestUnknownContentReturns404WithoutSynthesis(t *testing.T) {
 	t.Parallel()
 
@@ -530,6 +672,10 @@ func (r *mapContentResolver) lookupText(_ context.Context, entryID string) (stri
 
 func (r *mapContentResolver) ping(context.Context) error {
 	return nil
+}
+
+func (r *mapContentResolver) countEntries(context.Context) (int64, error) {
+	return int64(len(r.values)), nil
 }
 
 func performAudioGET(handler http.Handler, token, path string) *httptest.ResponseRecorder {

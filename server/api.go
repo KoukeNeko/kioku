@@ -51,10 +51,54 @@ type apiServer struct {
 func (a *apiServer) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", a.handleHealth)
+	mux.HandleFunc("GET /api/v1/dictionary-audio/manifest.ndjson", a.handleDictionaryAudioManifest)
 	mux.HandleFunc("GET /api/v1/dictionary-audio/{kind}/{id}", a.handleDictionaryAudio)
 	mux.HandleFunc("HEAD /api/v1/dictionary-audio/{kind}/{id}", a.handleDictionaryAudio)
 	mux.HandleFunc("DELETE /api/v1/dictionary-audio/{kind}/{id}", a.handleDeleteDictionaryAudio)
 	return a.logRequests(mux)
+}
+
+func (a *apiServer) handleDictionaryAudioManifest(response http.ResponseWriter, request *http.Request) {
+	if !a.authorized(request) {
+		writeAPIError(response, http.StatusUnauthorized, "unauthorized", "Authentication is required.")
+		return
+	}
+
+	summary, err := a.service.prepareManifest(
+		request.Context(), a.defaultVoice, a.defaultFormat, a.defaultSpeed,
+	)
+	if err != nil {
+		a.logger.Error("prepare dictionary audio manifest", "error", err)
+		writeAPIError(response, http.StatusServiceUnavailable, "manifest_unavailable", "Audio manifest is temporarily unavailable.")
+		return
+	}
+
+	response.Header().Set("Content-Type", "application/x-ndjson; charset=utf-8")
+	response.Header().Set("Cache-Control", "no-cache")
+	response.Header().Set("X-Content-Type-Options", "nosniff")
+	encoder := json.NewEncoder(response)
+	if err := encoder.Encode(map[string]any{
+		"type":           "manifest",
+		"schema_version": 1,
+		"profile_id":     summary.profileID,
+		"format":         summary.format,
+		"expected_count": summary.expected,
+		"ready_count":    summary.ready,
+		"total_bytes":    summary.totalBytes,
+	}); err != nil {
+		return
+	}
+
+	for _, asset := range summary.assets {
+		if err := encoder.Encode(map[string]any{
+			"type":       "asset",
+			"entry_id":   asset.identity.entryID,
+			"sha256":     asset.etag,
+			"size_bytes": asset.sizeBytes,
+		}); err != nil {
+			return
+		}
+	}
 }
 
 func (a *apiServer) handleDeleteDictionaryAudio(response http.ResponseWriter, request *http.Request) {
@@ -114,12 +158,6 @@ func (a *apiServer) handleDictionaryAudio(response http.ResponseWriter, request 
 		writeAPIError(response, http.StatusUnauthorized, "unauthorized", "Authentication is required.")
 		return
 	}
-	if !a.rateLimiter.allow(clientIP(request)) {
-		response.Header().Set("Retry-After", "60")
-		writeAPIError(response, http.StatusTooManyRequests, "rate_limited", "Too many requests.")
-		return
-	}
-
 	kind := request.PathValue("kind")
 	id := request.PathValue("id")
 	if !validEntryPart(kind, id) {
@@ -129,7 +167,7 @@ func (a *apiServer) handleDictionaryAudio(response http.ResponseWriter, request 
 	entryID := kind + ":" + id
 	asset, err := a.service.readyAsset(request.Context(), entryID, a.defaultVoice, a.defaultFormat, a.defaultSpeed)
 	if errors.Is(err, errAudioNotFound) {
-		a.handleMissingAudio(response, request, entryID)
+		a.handleRateLimitedMissingAudio(response, request, entryID)
 		return
 	}
 	if err != nil {
@@ -148,7 +186,7 @@ func (a *apiServer) handleDictionaryAudio(response http.ResponseWriter, request 
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			a.service.invalidateAsset(request.Context(), asset.identity, "indexed audio file disappeared before serving")
-			a.handleMissingAudio(response, request, entryID)
+			a.handleRateLimitedMissingAudio(response, request, entryID)
 			return
 		}
 		a.logger.Error("open indexed audio object", "entry_id", entryID, "path", path, "error", err)
@@ -159,7 +197,7 @@ func (a *apiServer) handleDictionaryAudio(response http.ResponseWriter, request 
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Size() != asset.sizeBytes {
 		a.service.invalidateAsset(request.Context(), asset.identity, "indexed audio file became invalid before serving")
-		a.handleMissingAudio(response, request, entryID)
+		a.handleRateLimitedMissingAudio(response, request, entryID)
 		return
 	}
 
@@ -169,6 +207,15 @@ func (a *apiServer) handleDictionaryAudio(response http.ResponseWriter, request 
 	response.Header().Set("X-Cache", "HIT")
 	response.Header().Set("X-Audio-Profile", a.service.profileID())
 	http.ServeContent(response, request, asset.objectKey, asset.updatedAt, file)
+}
+
+func (a *apiServer) handleRateLimitedMissingAudio(response http.ResponseWriter, request *http.Request, entryID string) {
+	if !a.rateLimiter.allow(clientIP(request)) {
+		response.Header().Set("Retry-After", "60")
+		writeAPIError(response, http.StatusTooManyRequests, "rate_limited", "Too many requests.")
+		return
+	}
+	a.handleMissingAudio(response, request, entryID)
 }
 
 func (a *apiServer) handleMissingAudio(response http.ResponseWriter, request *http.Request, entryID string) {

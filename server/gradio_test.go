@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -66,5 +67,20 @@ func TestGradioClientGeneratesDownloadsAndTranscodes(t *testing.T) {
 	}
 	if string(audio) != "m4a-audio" {
 		t.Fatalf("audio = %q", audio)
+	}
+}
+
+func TestOpusTranscodeArgumentsUseCompactSpeechProfile(t *testing.T) {
+	t.Parallel()
+
+	got := transcodeArguments("input.wav", "output.opus", "opus")
+	want := []string{
+		"-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", "input.wav",
+		"-ac", "1", "-c:a", "libopus", "-b:a", "32k", "-vbr", "on",
+		"-application", "voip", "-compression_level", "10", "-frame_duration", "60",
+		"-f", "ogg", "output.opus",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("transcode arguments = %#v, want %#v", got, want)
 	}
 }

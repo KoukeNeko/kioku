@@ -203,14 +203,7 @@ func (c *gradioClient) transcodeWAV(ctx context.Context, wav []byte, format stri
 	// Preserve the complete model output. Silence-based segment removal cannot
 	// distinguish hallucinated speech from a legitimate short word followed by
 	// a long pause (for example, 「ぜひ お願いします」).
-	args := []string{"-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", inputPath}
-	if format == "opus" {
-		args = append(args, "-c:a", "libopus", "-b:a", "64k", "-f", "ogg", outputPath)
-	} else if format == "m4a" {
-		args = append(args, "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", "-f", "mp4", outputPath)
-	} else {
-		args = append(args, "-c:a", "aac", "-b:a", "96k", "-f", "adts", outputPath)
-	}
+	args := transcodeArguments(inputPath, outputPath, format)
 	output, err := exec.CommandContext(ctx, c.ffmpegPath, args...).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("transcode Gradio WAV: %w: %s", err, strings.TrimSpace(string(output)))
@@ -223,4 +216,26 @@ func (c *gradioClient) transcodeWAV(ctx context.Context, wav []byte, format stri
 		return nil, fmt.Errorf("transcoded audio must contain 1 to %d bytes", c.maxAudioSize)
 	}
 	return audio, nil
+}
+
+func transcodeArguments(inputPath, outputPath, format string) []string {
+	args := []string{"-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-i", inputPath}
+	if format == "opus" {
+		args = append(args,
+			"-ac", "1",
+			"-c:a", "libopus",
+			"-b:a", "32k",
+			"-vbr", "on",
+			"-application", "voip",
+			"-compression_level", "10",
+			"-frame_duration", "60",
+			"-f", "ogg",
+			outputPath,
+		)
+	} else if format == "m4a" {
+		args = append(args, "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", "-f", "mp4", outputPath)
+	} else {
+		args = append(args, "-c:a", "aac", "-b:a", "96k", "-f", "adts", outputPath)
+	}
+	return args
 }
