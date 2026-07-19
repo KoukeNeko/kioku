@@ -92,12 +92,20 @@ Successful responses contain raw audio, `ETag`, `X-Audio-Profile`, `X-Cache: HIT
 
 An ID absent from the content DB returns `404 entry_not_found` and does not call Irodori.
 
+Delete one generated asset and its DB index. The operation is idempotent; the
+next `GET` queues a fresh generation:
+
+```sh
+curl -X DELETE http://localhost:8090/api/v1/dictionary-audio/example/42
+curl http://localhost:8090/api/v1/dictionary-audio/example/42
+```
+
 ## Security
 
 - For the initial trusted LAN build, leave `APP_API_KEY` empty and do not expose port 8090 to the internet.
 - Keep `IRODORI_API_KEY` only on this server.
 - A production mobile client needs HTTPS and real session authentication; a fixed token stored in an App setting is not a secret.
-- Keep the Irodori and Gradio endpoints private. The App calls only this GET-only cache-through API.
+- Keep the Irodori and Gradio endpoints private. The App calls only this scoped dictionary-audio API.
 
 ## Verify
 

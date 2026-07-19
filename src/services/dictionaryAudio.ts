@@ -138,6 +138,40 @@ export const invalidateDictionaryAudioCacheEntry = (entryId: string): void => {
   inflightDownloads.delete(`${baseUrl}\n${entryId}`);
 };
 
+/** Server 與本機只刪除指定音聲，隨後用 HEAD 立即觸發背景重新生成。 */
+export const regenerateDictionaryAudio = async (entryId: string): Promise<void> => {
+  if (!isDictionaryAudioEntryId(entryId)) {
+    throw new Error(`Invalid dictionary audio entry ID: ${entryId}`);
+  }
+  const baseUrl = getTtsServerUrl();
+  if (!baseUrl) throw new Error('音声サーバーが設定されていません');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const url = audioUrl(baseUrl, entryId);
+  try {
+    const deletion = await expoFetch(url, { method: 'DELETE', signal: controller.signal });
+    if (!deletion.ok) {
+      throw new Error(`音声の削除に失敗しました（HTTP ${deletion.status}）`);
+    }
+
+    invalidateDictionaryAudioCacheEntry(entryId);
+    const regeneration = await expoFetch(url, { method: 'HEAD', signal: controller.signal });
+    const generationState = regeneration.headers.get('x-audio-generation');
+    if (regeneration.ok || (regeneration.status === 404 && (generationState === 'started' || generationState === 'in-progress'))) {
+      return;
+    }
+    throw new Error(`音声の再生成を開始できませんでした（HTTP ${regeneration.status}）`);
+  } catch (error) {
+    if ((error as { name?: string }).name === 'AbortError') {
+      throw new Error('音声サーバーへの接続がタイムアウトしました');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 export const getDictionaryAudioCacheBytes = (): number => {
   const directory = cacheRootDirectory();
   return directory.exists ? (directory.size ?? 0) : 0;

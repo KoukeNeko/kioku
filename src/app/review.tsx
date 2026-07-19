@@ -24,7 +24,7 @@ import { parsePosLabels, buildConjugations } from "../services/grammar";
 import { ActivityIndicator } from "react-native";
 import { PitchAccent } from "../components/ui/PitchAccent";
 import { prefetchJapaneseAudio, speakJapanese } from "../utils/speech";
-import { isDictionaryAudioEntryId } from "../services/dictionaryAudio";
+import { isDictionaryAudioEntryId, regenerateDictionaryAudio } from "../services/dictionaryAudio";
 import { TechnicalInfoSheet } from "../components/ui/technical-info-sheet";
 
 interface FuriganaSegment {
@@ -246,7 +246,11 @@ export default function Review() {
       title: '単語',
       rows: [
         { label: '単語 ID', value: currentItem.id },
-        { label: '音声 ID', value: currentVocabAudioEntryId ?? 'なし' },
+        {
+          label: '音声 ID',
+          value: currentVocabAudioEntryId ?? 'なし',
+          audioEntryId: currentVocabAudioEntryId,
+        },
         { label: '表記', value: expression },
         { label: '読み', value: reading || 'なし' },
       ],
@@ -256,6 +260,7 @@ export default function Review() {
       rows: exampleList.map((sentence, index) => ({
         label: `例文 ${index + 1}`,
         value: `ID: ${sentence.id}\n音声 ID: example:${sentence.id}\n${sentence.jp}`,
+        audioEntryId: `example:${sentence.id}`,
       })),
     },
   ];
@@ -510,6 +515,7 @@ export default function Review() {
       <TechnicalInfoSheet
         modalRef={technicalInfoSheetRef}
         sections={technicalInfoSections}
+        onRegenerateAudio={regenerateDictionaryAudio}
       />
     </SafeAreaView>
   );

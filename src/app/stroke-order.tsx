@@ -14,6 +14,7 @@ import { ExampleSentenceCard } from '../components/ui/ExampleSentenceCard';
 import { BackButton } from '../components/ui/BackButton';
 import { speakJapanese } from '../utils/speech';
 import { TechnicalInfoSheet } from '../components/ui/technical-info-sheet';
+import { regenerateDictionaryAudio } from '../services/dictionaryAudio';
 
 const { width } = Dimensions.get('window');
 
@@ -92,6 +93,7 @@ export default function StrokeOrder() {
             rows: words.map((word, index) => ({
                 label: `単語 ${index + 1}`,
                 value: `ID: ${word.id}\n音声 ID: vocab:${word.id}\n${word.expression}`,
+                audioEntryId: `vocab:${word.id}`,
             })),
         },
         {
@@ -99,6 +101,7 @@ export default function StrokeOrder() {
             rows: examples.map((example, index) => ({
                 label: `例文 ${index + 1}`,
                 value: `ID: ${example.id}\n音声 ID: example:${example.id}\n${example.jp}`,
+                audioEntryId: `example:${example.id}`,
             })),
         },
     ];
@@ -241,6 +244,7 @@ export default function StrokeOrder() {
                 modalRef={technicalInfoSheetRef}
                 sections={technicalInfoSections}
                 title="漢字の技術情報"
+                onRegenerateAudio={regenerateDictionaryAudio}
             />
         </SafeAreaView>
     );

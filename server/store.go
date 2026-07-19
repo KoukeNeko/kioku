@@ -197,6 +197,53 @@ func (s *assetStore) markFailed(ctx context.Context, identity audioIdentity, mes
 	return nil
 }
 
+// deleteAsset removes one indexed profile and its corresponding audio object.
+// Missing rows and already-removed files are treated as a successful no-op.
+func (s *assetStore) deleteAsset(ctx context.Context, identity audioIdentity) (bool, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT object_key
+		FROM audio_assets
+		WHERE entry_id = ? AND voice_id = ? AND format = ? AND speed_milli = ?
+		  AND voice_version = ? AND model_revision = ? AND profile_version = ?`,
+		identity.entryID, identity.voice, identity.format, identity.speedMilli,
+		identity.voiceVersion, identity.modelRevision, identity.profileVersion,
+	)
+
+	var objectKey sql.NullString
+	if err := row.Scan(&objectKey); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("query audio asset for deletion: %w", err)
+	}
+
+	if objectKey.Valid && objectKey.String != "" {
+		objectPath, err := s.assetPath(objectKey.String)
+		if err != nil {
+			return false, fmt.Errorf("resolve audio object for deletion: %w", err)
+		}
+		if err := os.Remove(objectPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return false, fmt.Errorf("remove audio object: %w", err)
+		}
+	}
+
+	result, err := s.db.ExecContext(ctx, `
+		DELETE FROM audio_assets
+		WHERE entry_id = ? AND voice_id = ? AND format = ? AND speed_milli = ?
+		  AND voice_version = ? AND model_revision = ? AND profile_version = ?`,
+		identity.entryID, identity.voice, identity.format, identity.speedMilli,
+		identity.voiceVersion, identity.modelRevision, identity.profileVersion,
+	)
+	if err != nil {
+		return false, fmt.Errorf("delete audio asset index: %w", err)
+	}
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("read deleted audio asset count: %w", err)
+	}
+	return deleted > 0, nil
+}
+
 func (s *assetStore) assetPath(objectKey string) (string, error) {
 	normalizedKey := strings.ReplaceAll(objectKey, `\`, "/")
 	parts := strings.Split(normalizedKey, "/")

@@ -211,6 +211,10 @@ func (s *audioService) readyAsset(ctx context.Context, entryID, voice, format st
 	return asset, nil
 }
 
+func (s *audioService) deleteAudio(ctx context.Context, entryID, voice, format string, speed float64) (bool, error) {
+	return s.store.deleteAsset(ctx, s.identity(entryID, voice, format, speed))
+}
+
 func (s *audioService) invalidateAsset(ctx context.Context, identity audioIdentity, reason string) {
 	if err := s.store.markFailed(ctx, identity, reason); err != nil && s.logger != nil {
 		s.logger.Error("invalidate audio asset", "entry_id", identity.entryID, "error", err)

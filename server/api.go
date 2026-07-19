@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +53,36 @@ func (a *apiServer) routes() http.Handler {
 	mux.HandleFunc("GET /healthz", a.handleHealth)
 	mux.HandleFunc("GET /api/v1/dictionary-audio/{kind}/{id}", a.handleDictionaryAudio)
 	mux.HandleFunc("HEAD /api/v1/dictionary-audio/{kind}/{id}", a.handleDictionaryAudio)
+	mux.HandleFunc("DELETE /api/v1/dictionary-audio/{kind}/{id}", a.handleDeleteDictionaryAudio)
 	return a.logRequests(mux)
+}
+
+func (a *apiServer) handleDeleteDictionaryAudio(response http.ResponseWriter, request *http.Request) {
+	if !a.authorized(request) {
+		writeAPIError(response, http.StatusUnauthorized, "unauthorized", "Authentication is required.")
+		return
+	}
+	if !a.rateLimiter.allow(clientIP(request)) {
+		response.Header().Set("Retry-After", "60")
+		writeAPIError(response, http.StatusTooManyRequests, "rate_limited", "Too many requests.")
+		return
+	}
+
+	kind := request.PathValue("kind")
+	id := request.PathValue("id")
+	if !validEntryPart(kind, id) {
+		writeAPIError(response, http.StatusBadRequest, "invalid_entry_id", "Audio entry must be vocab/<id> or example/<id>.")
+		return
+	}
+	entryID := kind + ":" + id
+	deleted, err := a.service.deleteAudio(request.Context(), entryID, a.defaultVoice, a.defaultFormat, a.defaultSpeed)
+	if err != nil {
+		a.logger.Error("delete audio asset", "entry_id", entryID, "error", err)
+		writeAPIError(response, http.StatusServiceUnavailable, "audio_delete_failed", "Audio could not be deleted.")
+		return
+	}
+	response.Header().Set("X-Audio-Deleted", strconv.FormatBool(deleted))
+	response.WriteHeader(http.StatusNoContent)
 }
 
 func (a *apiServer) handleHealth(response http.ResponseWriter, request *http.Request) {

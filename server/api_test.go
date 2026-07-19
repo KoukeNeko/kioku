@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -141,6 +142,70 @@ func TestMissingAudioReturns404ThenGeneratesInBackground(t *testing.T) {
 	}
 	if got := response.Header().Get("X-Cache"); got != "HIT" {
 		t.Fatalf("X-Cache = %q, want HIT", got)
+	}
+}
+
+func TestDeleteAudioRemovesOnlyRequestedAssetAndAllowsRegeneration(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		call := calls.Add(1)
+		_, _ = fmt.Fprintf(response, "generated-audio-%d", call)
+	}))
+	defer upstream.Close()
+	runtime := newTestRuntime(t, upstream.URL)
+
+	result, err := runtime.service.prewarm(context.Background(), synthesisRequest{
+		entryID: "example:42", text: "自然な例文です。", voice: runtime.cfg.defaultVoice,
+		format: runtime.cfg.defaultFormat, speed: runtime.cfg.defaultSpeed,
+	}, false)
+	if err != nil {
+		t.Fatalf("prewarm: %v", err)
+	}
+	objectPath, err := runtime.store.assetPath(result.asset.objectKey)
+	if err != nil {
+		t.Fatalf("asset path: %v", err)
+	}
+
+	unauthorized := performAudioRequest(runtime.handler, http.MethodDelete, "wrong", "/api/v1/dictionary-audio/example/42")
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized DELETE status = %d", unauthorized.Code)
+	}
+
+	deleted := performAudioRequest(runtime.handler, http.MethodDelete, "app-secret", "/api/v1/dictionary-audio/example/42")
+	if deleted.Code != http.StatusNoContent || deleted.Header().Get("X-Audio-Deleted") != "true" {
+		t.Fatalf("DELETE status=%d headers=%v body=%s", deleted.Code, deleted.Header(), deleted.Body.String())
+	}
+	if _, err := os.Stat(objectPath); !os.IsNotExist(err) {
+		t.Fatalf("deleted audio object still exists: %v", err)
+	}
+	if _, err := runtime.service.readyAsset(context.Background(), "example:42", runtime.cfg.defaultVoice, runtime.cfg.defaultFormat, runtime.cfg.defaultSpeed); err != errAudioNotFound {
+		t.Fatalf("readyAsset after DELETE error = %v, want errAudioNotFound", err)
+	}
+
+	missing := performAudioRequest(runtime.handler, http.MethodDelete, "app-secret", "/api/v1/dictionary-audio/example/42")
+	if missing.Code != http.StatusNoContent || missing.Header().Get("X-Audio-Deleted") != "false" {
+		t.Fatalf("idempotent DELETE status=%d headers=%v", missing.Code, missing.Header())
+	}
+
+	response := performAudioGET(runtime.handler, "app-secret", "/api/v1/dictionary-audio/example/42")
+	if response.Code != http.StatusNotFound || response.Header().Get("X-Audio-Generation") != "started" {
+		t.Fatalf("regeneration GET status=%d headers=%v body=%s", response.Code, response.Header(), response.Body.String())
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		response = performAudioGET(runtime.handler, "app-secret", "/api/v1/dictionary-audio/example/42")
+		if response.Code == http.StatusOK {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("regenerated audio was not ready; status=%d body=%s", response.Code, response.Body.String())
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if response.Body.String() != "generated-audio-2" || calls.Load() != 2 {
+		t.Fatalf("regenerated body=%q upstream calls=%d", response.Body.String(), calls.Load())
 	}
 }
 
@@ -468,7 +533,11 @@ func (r *mapContentResolver) ping(context.Context) error {
 }
 
 func performAudioGET(handler http.Handler, token, path string) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(http.MethodGet, path, nil)
+	return performAudioRequest(handler, http.MethodGet, token, path)
+}
+
+func performAudioRequest(handler http.Handler, method, token, path string) *httptest.ResponseRecorder {
+	request := httptest.NewRequest(method, path, nil)
 	request.Header.Set("Authorization", "Bearer "+token)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
